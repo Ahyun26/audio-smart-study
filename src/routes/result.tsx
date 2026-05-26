@@ -6,7 +6,9 @@ import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak, stopSpeaking } from "@/lib/speak";
 
 export const Route = createFileRoute("/result")({
-  head: () => ({ meta: [{ title: "분석 결과 — AI 학습 도우미" }] }),
+  head: () => ({
+    meta: [{ title: "분석 결과 - AI 학습 도우미" }],
+  }),
   component: Result,
 });
 
