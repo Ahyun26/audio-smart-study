@@ -7,7 +7,7 @@ import { speak, stopSpeaking } from "@/lib/speak";
 
 export const Route = createFileRoute("/result")({
   head: () => ({ meta: [{ title: "분석 결과 — AI 학습 도우미" }] }),
-  component: Result;
+  component: Result,
 });
 
 const DOC = {
