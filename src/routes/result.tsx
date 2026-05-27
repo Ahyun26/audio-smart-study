@@ -13,22 +13,21 @@ export const Route = createFileRoute("/result")({
 });
 
 // n8n webhook이 반환한 결과를 sessionStorage에서 읽어 NOTE 기본값과 병합
-function loadAnalysis(): typeof NOTE {
-  if (typeof window === "undefined") return NOTE;
+function loadAnalysis(): typeof DEFAULT_NOTE {
+  if (typeof window === "undefined") return DEFAULT_NOTE;
   try {
     const raw = sessionStorage.getItem("analysis_result");
-    if (!raw) return NOTE;
+    if (!raw) return DEFAULT_NOTE;
     const parsed = JSON.parse(raw);
-    // n8n이 배열로 감싸 반환하는 경우 첫 항목 사용
     const data = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (!data || typeof data !== "object") return NOTE;
-    return { ...NOTE, ...data } as typeof NOTE;
+    if (!data || typeof data !== "object") return DEFAULT_NOTE;
+    return { ...DEFAULT_NOTE, ...data } as typeof DEFAULT_NOTE;
   } catch {
-    return NOTE;
+    return DEFAULT_NOTE;
   }
 }
 
-const NOTE = {
+const DEFAULT_NOTE = {
   subject: "회로이론",
   docType: "강의자료 + 강의 녹음",
   pages: 5,
