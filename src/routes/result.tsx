@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
@@ -7,12 +7,27 @@ import { speak, stopSpeaking } from "@/lib/speak";
 
 export const Route = createFileRoute("/result")({
   head: () => ({
-    meta: [{ title: "AI 학습 노트 - 회로이론" }],
+    meta: [{ title: "AI 학습 노트" }],
   }),
   component: Result,
 });
 
-const NOTE = {
+// n8n webhook이 반환한 결과를 sessionStorage에서 읽어 NOTE 기본값과 병합
+function loadAnalysis(): typeof DEFAULT_NOTE {
+  if (typeof window === "undefined") return DEFAULT_NOTE;
+  try {
+    const raw = sessionStorage.getItem("analysis_result");
+    if (!raw) return DEFAULT_NOTE;
+    const parsed = JSON.parse(raw);
+    const data = Array.isArray(parsed) ? parsed[0] : parsed;
+    if (!data || typeof data !== "object") return DEFAULT_NOTE;
+    return { ...DEFAULT_NOTE, ...data } as typeof DEFAULT_NOTE;
+  } catch {
+    return DEFAULT_NOTE;
+  }
+}
+
+const DEFAULT_NOTE = {
   subject: "회로이론",
   docType: "강의자료 + 강의 녹음",
   pages: 5,
@@ -106,6 +121,7 @@ const NOTE = {
 function Result() {
   const navigate = useNavigate();
   const [playing, setPlaying] = useState<"full" | "key" | null>(null);
+  const NOTE = useMemo(() => loadAnalysis(), []);
 
   const announcement =
     "분석이 완료되었습니다. 교수님 강조 내용과 핵심 개념이 정리되었습니다. 이해도 확인 문제도 생성되었습니다.";
