@@ -193,9 +193,19 @@ function Result() {
           <p className="mt-5 text-base font-bold text-muted-foreground uppercase tracking-wider">
             설명
           </p>
-          <p className="mt-2 text-xl leading-relaxed">
-            {NOTE.emphasis.description}
-          </p>
+          <div className="mt-2 space-y-3 text-xl leading-relaxed">
+            {NOTE.emphasis.descriptionParagraphs.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+          <div className="mt-4 rounded-2xl bg-foreground text-background px-6 py-5 text-center">
+            <p className="text-sm font-bold uppercase tracking-wider opacity-70">
+              공식
+            </p>
+            <p className="mt-1 text-3xl font-extrabold tracking-wide">
+              {NOTE.emphasis.formula}
+            </p>
+          </div>
 
           <p className="mt-6 text-base font-bold text-muted-foreground uppercase tracking-wider">
             교수님 강조 포인트
