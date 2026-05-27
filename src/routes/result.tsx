@@ -234,13 +234,25 @@ function Result() {
 
         {/* 핵심 내용 정리 */}
         <section aria-label="핵심 내용 정리">
-          <SectionTitle icon="📖">핵심 내용 정리</SectionTitle>
-          <div className="mt-5 space-y-7">
+          <SectionTitle icon="📝">핵심 내용 정리</SectionTitle>
+          <div className="mt-5 space-y-8">
             {NOTE.concepts.map((c) => (
-              <article key={c.name} className="border-l-4 border-primary pl-5">
+              <article
+                key={c.name}
+                className="border-l-4 border-primary pl-5"
+              >
                 <h3 className="text-2xl font-extrabold">{c.name}</h3>
-                <ul className="mt-3 space-y-2" role="list">
-                  {c.points.map((p) => (
+
+                <p className="mt-4 text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                  개념
+                </p>
+                <p className="mt-2 text-xl leading-relaxed">{c.definition}</p>
+
+                <p className="mt-5 text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                  특징
+                </p>
+                <ul className="mt-2 space-y-2" role="list">
+                  {c.features.map((p) => (
                     <li
                       key={p}
                       className="flex gap-3 text-xl leading-relaxed"
@@ -252,10 +264,81 @@ function Result() {
                     </li>
                   ))}
                 </ul>
+
+                <p className="mt-5 text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                  예시
+                </p>
+                <p className="mt-2 text-lg leading-relaxed italic text-foreground/90 bg-muted rounded-xl px-4 py-3">
+                  {c.example}
+                </p>
               </article>
             ))}
           </div>
         </section>
+
+        {/* 시각자료 해석 */}
+        <section aria-label="시각자료 해석">
+          <SectionTitle icon="📊">시각자료 해석</SectionTitle>
+          <div className="mt-5 space-y-6">
+            {NOTE.visuals.map((v) => (
+              <article
+                key={v.title}
+                className="rounded-2xl border-2 border-border bg-card p-6"
+              >
+                <p className="text-sm font-bold text-primary uppercase tracking-wider">
+                  [{v.kind}]
+                </p>
+                <h3 className="mt-1 text-2xl font-extrabold">{v.title}</h3>
+
+                {v.axes && (
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl bg-muted px-4 py-3">
+                      <p className="text-xs font-bold text-muted-foreground uppercase">
+                        가로축
+                      </p>
+                      <p className="mt-1 text-lg font-bold">{v.axes.x}</p>
+                    </div>
+                    <div className="rounded-xl bg-muted px-4 py-3">
+                      <p className="text-xs font-bold text-muted-foreground uppercase">
+                        세로축
+                      </p>
+                      <p className="mt-1 text-lg font-bold">{v.axes.y}</p>
+                    </div>
+                  </div>
+                )}
+
+                <p className="mt-5 text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                  해석
+                </p>
+                <p className="mt-2 text-lg leading-relaxed">
+                  {v.interpretation}
+                </p>
+
+                <p className="mt-5 text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                  핵심 포인트
+                </p>
+                <ul className="mt-2 space-y-2" role="list">
+                  {v.points.map((p) => (
+                    <li key={p} className="flex gap-3 text-lg leading-relaxed">
+                      <span aria-hidden className="text-primary font-bold">
+                        •
+                      </span>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-5 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3">
+                  <p className="text-xs font-bold text-primary uppercase tracking-wider">
+                    시험 포인트
+                  </p>
+                  <p className="mt-1 text-lg font-medium">{v.examNote}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
 
         {/* 개념 관계 시각화 */}
         <section aria-label="개념 관계 시각화">
