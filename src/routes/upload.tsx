@@ -4,6 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak } from "@/lib/speak";
+import { getWebhookUrl, setWebhookUrl, sendToWebhook } from "@/lib/webhook";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/upload")({
   component: Upload,
 });
 
-type Slot = { name: string; size: number } | null;
+type Slot = { file: File; name: string; size: number } | null;
 
 function Upload() {
   const navigate = useNavigate();
@@ -20,13 +21,41 @@ function Upload() {
   const audioRef = useRef<HTMLInputElement>(null);
   const [pdf, setPdf] = useState<Slot>(null);
   const [audio, setAudio] = useState<Slot>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [webhookUrl, setUrl] = useState(() =>
+    typeof window === "undefined" ? "" : getWebhookUrl(),
+  );
 
   const announcement =
     "파일 업로드 화면입니다. PDF 파일과 강의 녹음 파일을 업로드할 수 있습니다.";
 
-  const start = () => {
+  const start = async () => {
+    setError(null);
+    setSending(true);
     speak("문서를 분석 중입니다. 잠시만 기다려 주세요.");
-    navigate({ to: "/analyzing" });
+    try {
+      // 파일 메타데이터를 미리 저장 (분석 화면에서 사용)
+      sessionStorage.setItem(
+        "analysis_meta",
+        JSON.stringify({
+          pdfName: pdf?.name ?? null,
+          audioName: audio?.name ?? null,
+          uploadedAt: new Date().toISOString(),
+        }),
+      );
+      const result = await sendToWebhook({
+        pdf: pdf?.file ?? null,
+        audio: audio?.file ?? null,
+      });
+      sessionStorage.setItem("analysis_result", JSON.stringify(result));
+      navigate({ to: "/analyzing" });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "알 수 없는 오류";
+      setError(`Webhook 전송 실패: ${msg}`);
+      speak("웹훅 전송에 실패했습니다. URL과 n8n 서버 상태를 확인하세요.");
+      setSending(false);
+    }
   };
 
   return (
@@ -41,7 +70,7 @@ function Upload() {
           accept="application/pdf"
           inputRef={pdfRef}
           onPick={(f) => {
-            setPdf({ name: f.name, size: f.size });
+            setPdf({ file: f, name: f.name, size: f.size });
             speak(`PDF 파일 ${f.name} 이 업로드되었습니다.`);
           }}
         />
@@ -53,19 +82,49 @@ function Upload() {
           accept="audio/*"
           inputRef={audioRef}
           onPick={(f) => {
-            setAudio({ name: f.name, size: f.size });
+            setAudio({ file: f, name: f.name, size: f.size });
             speak(`녹음 파일 ${f.name} 이 업로드되었습니다.`);
           }}
         />
 
+        {/* Webhook URL 설정 */}
+        <details className="rounded-2xl border-2 border-border bg-card px-5 py-4">
+          <summary className="text-base font-bold cursor-pointer">
+            🔗 n8n Webhook URL 설정
+          </summary>
+          <label className="block mt-3 text-sm font-semibold text-muted-foreground">
+            Webhook URL
+          </label>
+          <input
+            type="url"
+            value={webhookUrl}
+            onChange={(e) => setUrl(e.target.value)}
+            onBlur={() => setWebhookUrl(webhookUrl)}
+            className="mt-2 w-full px-4 py-3 rounded-xl border-2 border-border bg-background text-base font-mono"
+            placeholder="http://localhost:5678/webhook-test/docvoice/upload"
+          />
+          <p className="mt-2 text-sm text-muted-foreground">
+            POST · application/json · body에 PDF/오디오를 base64로 담아 전송합니다.
+          </p>
+        </details>
+
+        {error && (
+          <div
+            role="alert"
+            className="rounded-2xl border-2 border-destructive bg-destructive/5 px-5 py-4 text-base font-medium text-destructive"
+          >
+            {error}
+          </div>
+        )}
+
         <div className="pt-4">
           <BigButton
             onClick={start}
-            disabled={!pdf && !audio}
+            disabled={(!pdf && !audio) || sending}
             aria-label="분석 시작"
             className="disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            분석 시작
+            {sending ? "전송 중..." : "분석 시작"}
           </BigButton>
           <p className="text-center text-base text-muted-foreground mt-3">
             {pdf || audio
