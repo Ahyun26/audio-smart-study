@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
@@ -7,10 +7,26 @@ import { speak, stopSpeaking } from "@/lib/speak";
 
 export const Route = createFileRoute("/result")({
   head: () => ({
-    meta: [{ title: "AI 학습 노트 - 회로이론" }],
+    meta: [{ title: "AI 학습 노트" }],
   }),
   component: Result,
 });
+
+// n8n webhook이 반환한 결과를 sessionStorage에서 읽어 NOTE 기본값과 병합
+function loadAnalysis(): typeof NOTE {
+  if (typeof window === "undefined") return NOTE;
+  try {
+    const raw = sessionStorage.getItem("analysis_result");
+    if (!raw) return NOTE;
+    const parsed = JSON.parse(raw);
+    // n8n이 배열로 감싸 반환하는 경우 첫 항목 사용
+    const data = Array.isArray(parsed) ? parsed[0] : parsed;
+    if (!data || typeof data !== "object") return NOTE;
+    return { ...NOTE, ...data } as typeof NOTE;
+  } catch {
+    return NOTE;
+  }
+}
 
 const NOTE = {
   subject: "회로이론",
