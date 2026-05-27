@@ -110,11 +110,11 @@ function Result() {
   const announcement =
     "분석이 완료되었습니다. 교수님 강조 내용과 핵심 개념이 정리되었습니다. 이해도 확인 문제도 생성되었습니다.";
 
-  const fullText = `${NOTE.title}. 교수님 강조 개념은 ${NOTE.emphasis.concept}. ${NOTE.emphasis.description} 교수님 강조 포인트, ${NOTE.emphasis.professorPoints.join(", ")}. 핵심 내용 정리. ${NOTE.concepts
-    .map((c) => `${c.name}. ${c.points.join(", ")}`)
-    .join(". ")}. 이해도 확인 문제. ${NOTE.questions.map((q, i) => `${i + 1}번. ${q.q}`).join(" ")}`;
+  const fullText = `${NOTE.title}. 교수님 강조 개념은 ${NOTE.emphasis.concept}. ${NOTE.emphasis.descriptionParagraphs.join(" ")} 공식은 ${NOTE.emphasis.formula}. 교수님 강조 포인트, ${NOTE.emphasis.professorPoints.join(", ")}. 핵심 내용 정리. ${NOTE.concepts
+    .map((c) => `${c.name}. ${c.definition} 특징, ${c.features.join(", ")}. 예시, ${c.example}`)
+    .join(". ")}. 시각자료 해석. ${NOTE.visuals.map((v) => `${v.kind} ${v.title}. ${v.interpretation}`).join(" ")} 이해도 확인 문제. ${NOTE.questions.map((q, i) => `${i + 1}번. ${q.q}`).join(" ")}`;
 
-  const keyText = `핵심만 들려드립니다. 교수님이 강조한 개념은 ${NOTE.emphasis.concept}입니다. ${NOTE.emphasis.description} 교수님 강조 포인트는, ${NOTE.emphasis.professorPoints.join(", ")} 입니다.`;
+  const keyText = `핵심만 들려드립니다. 교수님이 강조한 개념은 ${NOTE.emphasis.concept}입니다. ${NOTE.emphasis.descriptionParagraphs[0]} 공식은 ${NOTE.emphasis.formula} 입니다. 교수님 강조 포인트는, ${NOTE.emphasis.professorPoints.join(", ")} 입니다.`;
 
   const play = (kind: "full" | "key") => {
     stopSpeaking();
