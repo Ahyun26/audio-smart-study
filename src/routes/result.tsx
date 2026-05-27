@@ -121,9 +121,7 @@ const DEFAULT_NOTE = {
 function Result() {
   const navigate = useNavigate();
   const [playing, setPlaying] = useState<"full" | "key" | null>(null);
-  const NOTE_DATA = useMemo(() => loadAnalysis(), []);
-  // 로컬 alias로 기존 JSX 그대로 사용 가능하도록
-  const note = NOTE_DATA;
+  const NOTE = useMemo(() => loadAnalysis(), []);
 
   const announcement =
     "분석이 완료되었습니다. 교수님 강조 내용과 핵심 개념이 정리되었습니다. 이해도 확인 문제도 생성되었습니다.";
