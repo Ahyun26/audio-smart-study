@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak } from "@/lib/speak";
-import { getWebhookUrl, setWebhookUrl, sendToWebhook } from "@/lib/webhook";
+import { sendToWebhook } from "@/lib/webhook";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -23,9 +23,6 @@ function Upload() {
   const [audio, setAudio] = useState<Slot>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [webhookUrl, setUrl] = useState(() =>
-    typeof window === "undefined" ? "" : getWebhookUrl(),
-  );
 
   const announcement =
     "파일 업로드 화면입니다. PDF 파일과 강의 녹음 파일을 업로드할 수 있습니다.";
@@ -86,27 +83,6 @@ function Upload() {
             speak(`녹음 파일 ${f.name} 이 업로드되었습니다.`);
           }}
         />
-
-        {/* Webhook URL 설정 */}
-        <details className="rounded-2xl border-2 border-border bg-card px-5 py-4">
-          <summary className="text-base font-bold cursor-pointer">
-            🔗 n8n Webhook URL 설정
-          </summary>
-          <label className="block mt-3 text-sm font-semibold text-muted-foreground">
-            Webhook URL
-          </label>
-          <input
-            type="url"
-            value={webhookUrl}
-            onChange={(e) => setUrl(e.target.value)}
-            onBlur={() => setWebhookUrl(webhookUrl)}
-            className="mt-2 w-full px-4 py-3 rounded-xl border-2 border-border bg-background text-base font-mono"
-            placeholder="http://localhost:5678/webhook-test/docvoice/upload"
-          />
-          <p className="mt-2 text-sm text-muted-foreground">
-            POST · application/json · body에 PDF/오디오를 base64로 담아 전송합니다.
-          </p>
-        </details>
 
         {error && (
           <div
