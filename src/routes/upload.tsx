@@ -22,10 +22,10 @@ function Upload() {
   const [pdf, setPdf] = useState<Slot>(null);
   const [audio, setAudio] = useState<Slot>(null);
   const [question, setQuestion] = useState("");
-  const [mode, setMode] = useState<WebhookMode>("요약");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
+
 
   const announcement =
     "파일 업로드 화면입니다. PDF 파일과 강의 녹음 파일을 업로드할 수 있습니다.";
@@ -40,26 +40,25 @@ function Upload() {
     setSending(true);
     speak("문서를 분석 중입니다. 잠시만 기다려 주세요.");
     try {
+      const q = question.trim();
+      const mode: WebhookMode = q ? "qa" : "summary";
       sessionStorage.setItem(
         "analysis_meta",
         JSON.stringify({
           pdfName: pdf?.name ?? null,
           audioName: audio?.name ?? null,
-          question,
+          question: q,
           mode,
           uploadedAt: new Date().toISOString(),
         }),
       );
       const result = await sendToWebhook({
         file: pdf.file,
-        question: question.trim(),
+        question: q,
         mode,
       });
-      setAnswer(result);
-      sessionStorage.setItem(
-        "analysis_result",
-        JSON.stringify({ answer: result }),
-      );
+      setAnswer(result.display);
+      sessionStorage.setItem("analysis_result", JSON.stringify(result));
       speak("분석이 완료되었습니다.");
       navigate({ to: "/result" });
 
