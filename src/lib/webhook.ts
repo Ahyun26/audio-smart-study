@@ -34,12 +34,14 @@ function stripCodeFence(s: string): string {
     .replace(/^\s*```(?:json)?\s*/i, "")
     .replace(/```\s*$/, "")
     .trim();
-}
-
 function buildDisplay(data: {
+  mode: WebhookMode;
   summary_text?: string;
   direct_text?: string;
 }): { display: string; parsed?: unknown } {
+  if (data.mode === "read_all") {
+    return { display: data.direct_text ?? "" };
+  }
   const raw = data.summary_text ?? "";
   if (raw) {
     const clean = stripCodeFence(raw);
@@ -50,9 +52,9 @@ function buildDisplay(data: {
       return { display: clean };
     }
   }
-  if (data.direct_text) return { display: data.direct_text };
-  return { display: "" };
+  return { display: data.direct_text ?? "" };
 }
+
 
 export async function sendToWebhook(input: {
   file: File;
@@ -102,6 +104,8 @@ export async function sendToWebhook(input: {
   }
 
   const { display, parsed } = buildDisplay({
+  const { display, parsed } = buildDisplay({
+    mode: input.mode,
     summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
     direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
   });
