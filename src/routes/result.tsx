@@ -156,15 +156,30 @@ function Result() {
 
           </h2>
         </header>
-
         {hasAnswer ? (
           <section
             aria-label="분석 결과 본문"
-            className="rounded-3xl border-2 border-border bg-card p-6"
+            className="rounded-3xl border-2 border-border bg-card p-6 space-y-4"
           >
-            <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
-              {answer}
-            </p>
+            {parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (
+              Object.entries(parsed as Record<string, unknown>).map(([k, v]) => (
+                <div key={k}>
+                  <h3 className="text-base font-bold text-primary uppercase tracking-wider mb-1">
+                    {k}
+                  </h3>
+                  <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
+                    {typeof v === "string" ? v : JSON.stringify(v, null, 2)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
+                {answer}
+              </p>
+            )}
+          </section>
+        ) : (
+
           </section>
         ) : (
           <section
