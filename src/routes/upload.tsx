@@ -117,6 +117,11 @@ function Upload() {
     }
   };
 
+  // 키보드 단축키에서 호출할 수 있도록 최신 start 함수 보관
+  useEffect(() => {
+    startRef.current = start;
+  });
+
   return (
     <AppShell title="파일 업로드" back={{ to: "/" }}>
       <VoiceAnnouncer message={announcement} />
