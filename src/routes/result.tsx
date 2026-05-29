@@ -87,16 +87,17 @@ function Result() {
     }
     stopSpeaking();
     setPlaying(section);
+    const mode = section === "readall" ? "readall" : "summary";
     if (hasImageMarkdown(text)) {
       speak("이미지 설명을 불러옵니다. 잠시만 기다려 주세요.");
       try {
         const expanded = await expandImagesForSpeech(text);
-        speak(expanded, { interrupt: true });
+        speak(expanded, { interrupt: true, mode });
       } catch {
-        speak(text, { interrupt: true });
+        speak(text, { interrupt: true, mode });
       }
     } else {
-      speak(text, { interrupt: true });
+      speak(text, { interrupt: true, mode });
     }
   };
 
