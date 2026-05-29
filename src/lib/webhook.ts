@@ -1,6 +1,5 @@
-// n8n webhook 연동
-export const WEBHOOK_URL =
-  "https://hp432300.app.n8n.cloud/webhook/docvoice/upload";
+// 앱 서버를 통해 n8n webhook으로 전달
+export const WEBHOOK_URL = "/api/webhook";
 
 async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
@@ -36,23 +35,34 @@ export async function sendToWebhook(input: {
   });
 
   if (!res.ok) {
-    throw new Error(`Webhook 응답 오류: ${res.status} ${res.statusText}`);
+    const text = await res.text();
+    let message = `Webhook 응답 오류: ${res.status} ${res.statusText}`;
+
+    try {
+      const data = text ? JSON.parse(text) : null;
+      if (data && typeof data === "object") {
+        const errorMessage = (data as { error?: string }).error;
+        const details = (data as { details?: string }).details;
+        if (errorMessage) {
+          message = details ? `${errorMessage} (${details})` : errorMessage;
+        }
+      }
+    } catch {
+      if (text) message = text;
+    }
+
+    throw new Error(message);
   }
 
   const text = await res.text();
-  let answer = "";
   try {
     const data = text ? JSON.parse(text) : null;
     if (data && typeof data === "object") {
-      answer =
-        (data as { answer?: string }).answer ??
-        (Array.isArray(data) && data[0]?.answer) ??
-        "";
+      return (data as { answer?: string }).answer ?? text;
     }
-    if (!answer) answer = text;
   } catch {
-    answer = text;
+    return text;
   }
 
-  return answer;
+  return text;
 }
