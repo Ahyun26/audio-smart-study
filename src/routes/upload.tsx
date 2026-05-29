@@ -76,7 +76,6 @@ function Upload() {
         "analysis_meta",
         JSON.stringify({
           pdfName: pdf?.name ?? null,
-          pdfName: pdf?.name ?? null,
           uploadedAt: new Date().toISOString(),
         }),
       );
