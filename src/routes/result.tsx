@@ -54,15 +54,17 @@ function Result() {
   const answer = useMemo(loadAnswer, []);
   const meta = useMemo(loadMeta, []);
   const [playing, setPlaying] = useState(false);
+function Result() {
+  const navigate = useNavigate();
+  const [answer, setAnswer] = useState("");
+  const [meta, setMeta] = useState<AnalysisMeta>({});
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
+    setAnswer(loadAnswer());
+    setMeta(loadMeta());
     return () => stopSpeaking();
   }, []);
-
-  const hasAnswer = answer.trim().length > 0;
-  const announcement = hasAnswer
-    ? "분석이 완료되었습니다. 결과를 확인하세요."
-    : "분석 결과가 없습니다. 파일을 다시 업로드해 주세요.";
 
   const play = () => {
     if (!hasAnswer) return;
