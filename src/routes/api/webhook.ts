@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 const N8N_WEBHOOK_URL =
   "https://hp432300.app.n8n.cloud/webhook/docvoice/upload";
 
-type WebhookMode = "summary" | "read_all" | "qa" | "all";
+type WebhookMode = "summary" | "readall" | "read_all" | "qa" | "all";
 
 type WebhookPayload = {
   file_base64: string;
@@ -29,6 +29,7 @@ function parsePayload(input: unknown): WebhookPayload {
   }
   if (
     p.mode !== "summary" &&
+    p.mode !== "readall" &&
     p.mode !== "read_all" &&
     p.mode !== "qa" &&
     p.mode !== "all"
