@@ -14,6 +14,7 @@ import { Route as ResultRouteImport } from './routes/result'
 import { Route as RecentRouteImport } from './routes/recent'
 import { Route as AnalyzingRouteImport } from './routes/analyzing'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiWebhookRouteImport } from './routes/api/webhook'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWebhookRoute = ApiWebhookRouteImport.update({
+  id: '/api/webhook',
+  path: '/api/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/recent': typeof RecentRoute
   '/result': typeof ResultRoute
   '/upload': typeof UploadRoute
+  '/api/webhook': typeof ApiWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/recent': typeof RecentRoute
   '/result': typeof ResultRoute
   '/upload': typeof UploadRoute
+  '/api/webhook': typeof ApiWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,27 @@ export interface FileRoutesById {
   '/recent': typeof RecentRoute
   '/result': typeof ResultRoute
   '/upload': typeof UploadRoute
+  '/api/webhook': typeof ApiWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analyzing' | '/recent' | '/result' | '/upload'
+  fullPaths:
+    | '/'
+    | '/analyzing'
+    | '/recent'
+    | '/result'
+    | '/upload'
+    | '/api/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analyzing' | '/recent' | '/result' | '/upload'
-  id: '__root__' | '/' | '/analyzing' | '/recent' | '/result' | '/upload'
+  to: '/' | '/analyzing' | '/recent' | '/result' | '/upload' | '/api/webhook'
+  id:
+    | '__root__'
+    | '/'
+    | '/analyzing'
+    | '/recent'
+    | '/result'
+    | '/upload'
+    | '/api/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +99,7 @@ export interface RootRouteChildren {
   RecentRoute: typeof RecentRoute
   ResultRoute: typeof ResultRoute
   UploadRoute: typeof UploadRoute
+  ApiWebhookRoute: typeof ApiWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/webhook': {
+      id: '/api/webhook'
+      path: '/api/webhook'
+      fullPath: '/api/webhook'
+      preLoaderRoute: typeof ApiWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,7 +155,18 @@ const rootRouteChildren: RootRouteChildren = {
   RecentRoute: RecentRoute,
   ResultRoute: ResultRoute,
   UploadRoute: UploadRoute,
+  ApiWebhookRoute: ApiWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
