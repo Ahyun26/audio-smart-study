@@ -118,7 +118,8 @@ function Result() {
             AI 분석 결과
           </p>
           <h2 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight">
-            {meta.mode === "질문" ? "질문에 대한 답변" : "문서 요약"}
+            {meta.mode === "qa" ? "질문에 대한 답변" : "문서 요약"}
+
           </h2>
         </header>
 
