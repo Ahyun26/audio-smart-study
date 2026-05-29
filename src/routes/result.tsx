@@ -20,31 +20,61 @@ type AnalysisMeta = {
   uploadedAt?: string;
 };
 
-function loadAnswer(): string {
-  if (typeof window === "undefined") return "";
+function stripCodeFence(s: string): string {
+  return s
+    .replace(/^\s*```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
+}
+
+function tryParseJson(s: string): unknown {
+  try {
+    return JSON.parse(stripCodeFence(s));
+  } catch {
+    return null;
+  }
+}
+
+function loadAnswer(): { text: string; parsed: unknown } {
+  if (typeof window === "undefined") return { text: "", parsed: null };
   try {
     const raw = sessionStorage.getItem("analysis_result");
-    if (!raw) return "";
-    const parsed = JSON.parse(raw);
-    const data = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (typeof data === "string") return data;
+    if (!raw) return { text: "", parsed: null };
+    const parsedRoot = JSON.parse(raw);
+    const data = Array.isArray(parsedRoot) ? parsedRoot[0] : parsedRoot;
+    if (typeof data === "string") {
+      return { text: data, parsed: tryParseJson(data) };
+    }
     if (data && typeof data === "object") {
       const d = data as {
         display?: unknown;
+        parsed?: unknown;
         summary_text?: unknown;
         direct_text?: unknown;
         answer?: unknown;
       };
-      if (typeof d.display === "string" && d.display) return d.display;
-      if (typeof d.summary_text === "string" && d.summary_text) return d.summary_text;
-      if (typeof d.direct_text === "string" && d.direct_text) return d.direct_text;
-      if (typeof d.answer === "string") return d.answer;
+      if (typeof d.summary_text === "string" && d.summary_text) {
+        const parsed = d.parsed ?? tryParseJson(d.summary_text);
+        const text =
+          typeof d.display === "string" && d.display
+            ? d.display
+            : parsed
+              ? JSON.stringify(parsed, null, 2)
+              : stripCodeFence(d.summary_text);
+        return { text, parsed };
+      }
+      if (typeof d.display === "string" && d.display)
+        return { text: d.display, parsed: d.parsed ?? tryParseJson(d.display) };
+      if (typeof d.direct_text === "string" && d.direct_text)
+        return { text: d.direct_text, parsed: null };
+      if (typeof d.answer === "string") return { text: d.answer, parsed: null };
     }
-    return raw;
+    return { text: raw, parsed: null };
   } catch {
-    return "";
+    return { text: "", parsed: null };
   }
 }
+
 
 
 function loadMeta(): AnalysisMeta {
@@ -61,14 +91,18 @@ function loadMeta(): AnalysisMeta {
 function Result() {
   const navigate = useNavigate();
   const [answer, setAnswer] = useState("");
+  const [parsed, setParsed] = useState<unknown>(null);
   const [meta, setMeta] = useState<AnalysisMeta>({});
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
-    setAnswer(loadAnswer());
+    const { text, parsed } = loadAnswer();
+    setAnswer(text);
+    setParsed(parsed);
     setMeta(loadMeta());
     return () => stopSpeaking();
   }, []);
+
 
   const hasAnswer = answer.trim().length > 0;
   const announcement = hasAnswer
@@ -122,17 +156,30 @@ function Result() {
 
           </h2>
         </header>
-
         {hasAnswer ? (
           <section
             aria-label="분석 결과 본문"
-            className="rounded-3xl border-2 border-border bg-card p-6"
+            className="rounded-3xl border-2 border-border bg-card p-6 space-y-4"
           >
-            <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
-              {answer}
-            </p>
+            {parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (
+              Object.entries(parsed as Record<string, unknown>).map(([k, v]) => (
+                <div key={k}>
+                  <h3 className="text-base font-bold text-primary uppercase tracking-wider mb-1">
+                    {k}
+                  </h3>
+                  <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
+                    {typeof v === "string" ? v : JSON.stringify(v, null, 2)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
+                {answer}
+              </p>
+            )}
           </section>
         ) : (
+
           <section
             role="alert"
             className="rounded-3xl border-2 border-destructive bg-destructive/5 p-6"
