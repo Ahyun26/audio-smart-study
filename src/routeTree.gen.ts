@@ -15,6 +15,7 @@ import { Route as RecentRouteImport } from './routes/recent'
 import { Route as AnalyzingRouteImport } from './routes/analyzing'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiWebhookRouteImport } from './routes/api/webhook'
+import { Route as ApiDescribeImageRouteImport } from './routes/api/describe-image'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -46,6 +47,11 @@ const ApiWebhookRoute = ApiWebhookRouteImport.update({
   path: '/api/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDescribeImageRoute = ApiDescribeImageRouteImport.update({
+  id: '/api/describe-image',
+  path: '/api/describe-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/recent': typeof RecentRoute
   '/result': typeof ResultRoute
   '/upload': typeof UploadRoute
+  '/api/describe-image': typeof ApiDescribeImageRoute
   '/api/webhook': typeof ApiWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/recent': typeof RecentRoute
   '/result': typeof ResultRoute
   '/upload': typeof UploadRoute
+  '/api/describe-image': typeof ApiDescribeImageRoute
   '/api/webhook': typeof ApiWebhookRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/recent': typeof RecentRoute
   '/result': typeof ResultRoute
   '/upload': typeof UploadRoute
+  '/api/describe-image': typeof ApiDescribeImageRoute
   '/api/webhook': typeof ApiWebhookRoute
 }
 export interface FileRouteTypes {
@@ -80,9 +89,17 @@ export interface FileRouteTypes {
     | '/recent'
     | '/result'
     | '/upload'
+    | '/api/describe-image'
     | '/api/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analyzing' | '/recent' | '/result' | '/upload' | '/api/webhook'
+  to:
+    | '/'
+    | '/analyzing'
+    | '/recent'
+    | '/result'
+    | '/upload'
+    | '/api/describe-image'
+    | '/api/webhook'
   id:
     | '__root__'
     | '/'
@@ -90,6 +107,7 @@ export interface FileRouteTypes {
     | '/recent'
     | '/result'
     | '/upload'
+    | '/api/describe-image'
     | '/api/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -99,6 +117,7 @@ export interface RootRouteChildren {
   RecentRoute: typeof RecentRoute
   ResultRoute: typeof ResultRoute
   UploadRoute: typeof UploadRoute
+  ApiDescribeImageRoute: typeof ApiDescribeImageRoute
   ApiWebhookRoute: typeof ApiWebhookRoute
 }
 
@@ -146,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/describe-image': {
+      id: '/api/describe-image'
+      path: '/api/describe-image'
+      fullPath: '/api/describe-image'
+      preLoaderRoute: typeof ApiDescribeImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -155,8 +181,19 @@ const rootRouteChildren: RootRouteChildren = {
   RecentRoute: RecentRoute,
   ResultRoute: ResultRoute,
   UploadRoute: UploadRoute,
+  ApiDescribeImageRoute: ApiDescribeImageRoute,
   ApiWebhookRoute: ApiWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
