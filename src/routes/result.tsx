@@ -111,11 +111,21 @@ function Result() {
     : "분석 결과를 불러오는 중입니다.";
 
 
-  const play = () => {
+  const play = async () => {
     if (!hasAnswer) return;
     stopSpeaking();
     setPlaying(true);
-    speak(answer, { interrupt: true });
+    if (hasImageMarkdown(answer)) {
+      speak("이미지 설명을 불러옵니다. 잠시만 기다려 주세요.");
+      try {
+        const expanded = await expandImagesForSpeech(answer);
+        speak(expanded, { interrupt: true });
+      } catch {
+        speak(answer, { interrupt: true });
+      }
+    } else {
+      speak(answer, { interrupt: true });
+    }
   };
 
   const stop = () => {
