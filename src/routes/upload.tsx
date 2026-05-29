@@ -18,19 +18,20 @@ type Slot = { file: File; name: string; size: number } | null;
 function Upload() {
   const navigate = useNavigate();
   const pdfRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
   const startRef = useRef<(() => void) | null>(null);
 
   const [pdf, setPdf] = useState<Slot>(null);
-  const [audio, setAudio] = useState<Slot>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
   const announcement =
-    "파일 업로드 화면입니다. 1번 PDF 선택, 2번 녹음 선택, 3번 분석 시작, 0번 안내 다시 듣기, 백스페이스 이전 화면.";
+    "파일 업로드 화면입니다. 1번 PDF 선택, 3번 분석 시작, 0번 안내 다시 듣기, 백스페이스 이전 화면.";
+
 
   const helpText =
-    "단축키 안내. 1번 PDF 파일 선택. 2번 녹음 파일 선택. 3번 분석 시작. 0번 이 안내 다시 듣기. 백스페이스 이전 화면.";
+    "단축키 안내. 1번 PDF 파일 선택. 3번 분석 시작. 0번 이 안내 다시 듣기. 백스페이스 이전 화면.";
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -45,11 +46,8 @@ function Upload() {
         e.preventDefault();
         speak("PDF 파일 선택 창을 엽니다.");
         pdfRef.current?.click();
-      } else if (e.key === "2") {
-        e.preventDefault();
-        speak("녹음 파일 선택 창을 엽니다.");
-        audioRef.current?.click();
       } else if (e.key === "3" || e.key === "Enter") {
+
         e.preventDefault();
         startRef.current?.();
       } else if (e.key === "0" || e.key === "?" || e.key === "h" || e.key === "H") {
@@ -79,7 +77,6 @@ function Upload() {
         "analysis_meta",
         JSON.stringify({
           pdfName: pdf?.name ?? null,
-          audioName: audio?.name ?? null,
           uploadedAt: new Date().toISOString(),
         }),
       );
@@ -117,8 +114,9 @@ function Upload() {
         >
           <p className="font-bold mb-1">키보드 단축키</p>
           <p className="text-muted-foreground">
-            1: PDF · 2: 녹음 · 3: 분석 시작 · 0: 안내 · Backspace: 뒤로
+            1: PDF · 3: 분석 시작 · 0: 안내 · Backspace: 뒤로
           </p>
+
         </div>
 
         <UploadCard
@@ -133,17 +131,6 @@ function Upload() {
           }}
         />
 
-        <UploadCard
-          label="강의 녹음 파일 (선택, 단축키 2)"
-          hint="MP3, M4A, WAV 등 음성 파일"
-          file={audio}
-          accept="audio/*"
-          inputRef={audioRef}
-          onPick={(f) => {
-            setAudio({ file: f, name: f.name, size: f.size });
-            speak(`녹음 파일 ${f.name} 이 업로드되었습니다.`);
-          }}
-        />
 
         {error && (
           <div
