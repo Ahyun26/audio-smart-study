@@ -101,49 +101,20 @@ function Upload() {
           }}
         />
 
-        <div className="rounded-3xl border-2 border-border bg-card p-6 flex flex-col gap-4">
-          <div>
-            <label className="text-xl font-bold" htmlFor="mode">
-              모드
-            </label>
-            <div className="mt-3 flex gap-3" id="mode">
-              {(["요약", "질문"] as WebhookMode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMode(m)}
-                  aria-pressed={mode === m}
-                  className={[
-                    "flex-1 rounded-2xl border-2 px-4 py-3 text-lg font-bold transition-colors",
-                    mode === m
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background hover:border-primary",
-                  ].join(" ")}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="question" className="text-xl font-bold">
-              질문 {mode === "요약" && <span className="text-base text-muted-foreground font-medium">(선택)</span>}
-            </label>
-            <textarea
-              id="question"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              rows={3}
-              placeholder={
-                mode === "질문"
-                  ? "예: 옴의 법칙을 쉽게 설명해 주세요"
-                  : "원하는 요약 방향을 적어 주세요 (선택)"
-              }
-              className="mt-3 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-lg outline-none focus:border-primary"
-            />
-          </div>
+        <div className="rounded-3xl border-2 border-border bg-card p-6">
+          <label htmlFor="question" className="text-xl font-bold">
+            질문 <span className="text-base text-muted-foreground font-medium">(선택)</span>
+          </label>
+          <textarea
+            id="question"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            rows={3}
+            placeholder="궁금한 내용이나 원하는 요약 방향을 적어 주세요"
+            className="mt-3 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-lg outline-none focus:border-primary"
+          />
         </div>
+
 
         {error && (
           <div
