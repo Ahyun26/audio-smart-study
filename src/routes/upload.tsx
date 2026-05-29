@@ -165,17 +165,19 @@ function Upload() {
 
         <div className="rounded-3xl border-2 border-border bg-card p-6">
           <label htmlFor="question" className="text-xl font-bold">
-            질문 <span className="text-base text-muted-foreground font-medium">(선택)</span>
+            질문 <span className="text-base text-muted-foreground font-medium">(선택, 단축키 3)</span>
           </label>
           <textarea
             id="question"
+            ref={questionRef}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             rows={3}
-            placeholder="궁금한 내용이나 원하는 요약 방향을 적어 주세요"
+            placeholder="궁금한 내용이나 원하는 요약 방향을 적어 주세요 (입력 종료: Esc)"
             className="mt-3 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-lg outline-none focus:border-primary"
           />
         </div>
+
 
 
         {error && (
