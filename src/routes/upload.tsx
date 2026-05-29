@@ -129,8 +129,9 @@ function Upload() {
           inputRef={pdfRef}
           onPick={(f) => {
             setPdf({ file: f, name: f.name, size: f.size });
-            speak(`PDF 파일 ${f.name} 이 업로드되었습니다.`);
+            speak(`PDF 파일 ${f.name} 이 업로드되었습니다. 분석을 시작하려면 2번을 누르세요.`);
           }}
+
         />
 
 
