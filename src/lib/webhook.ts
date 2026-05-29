@@ -1,6 +1,6 @@
 // n8n webhook 연동
 export const WEBHOOK_URL =
-  "https://xxx.app.n8n.cloud/webhook/docvoice/upload";
+  "https://hp432300.app.n8n.cloud/webhook/docvoice/upload";
 
 async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
