@@ -94,11 +94,6 @@ export async function sendToWebhook(input: {
     }),
   });
 
-      user_question: input.question,
-      history: input.history ?? [],
-    }),
-  });
-
   if (!res.ok) {
     const text = await res.text();
     let message = `Webhook 응답 오류: ${res.status} ${res.statusText}`;
