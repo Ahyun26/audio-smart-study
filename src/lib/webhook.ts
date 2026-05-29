@@ -148,8 +148,18 @@ export async function sendAnalysis(input: { file: File }): Promise<{
   }
 
   // read_all(전체 본문)과 summary(구조화 요약)를 병렬로 요청
+  const readRequest = (async () => {
+    if (typeof window !== "undefined") {
+      console.log("readall 요청 시작");
+    }
+    const readallRes = await postWebhook({ file_base64, mode: "read_all" });
+    if (typeof window !== "undefined") {
+      console.log("readall 응답:", readallRes);
+    }
+    return readallRes;
+  })();
   const [readData, sumData] = await Promise.all([
-    postWebhook({ file_base64, mode: "read_all" }),
+    readRequest,
     postWebhook({ file_base64, mode: "summary" }),
   ]);
 
