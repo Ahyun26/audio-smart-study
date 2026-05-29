@@ -132,17 +132,6 @@ function Upload() {
           }}
         />
 
-        <UploadCard
-          label="강의 녹음 파일 (선택, 단축키 2)"
-          hint="MP3, M4A, WAV 등 음성 파일"
-          file={audio}
-          accept="audio/*"
-          inputRef={audioRef}
-          onPick={(f) => {
-            setAudio({ file: f, name: f.name, size: f.size });
-            speak(`녹음 파일 ${f.name} 이 업로드되었습니다.`);
-          }}
-        />
 
         {error && (
           <div
