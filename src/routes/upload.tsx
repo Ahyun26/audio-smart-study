@@ -114,8 +114,9 @@ function Upload() {
         >
           <p className="font-bold mb-1">키보드 단축키</p>
           <p className="text-muted-foreground">
-            1: PDF · 2: 녹음 · 3: 분석 시작 · 0: 안내 · Backspace: 뒤로
+            1: PDF · 3: 분석 시작 · 0: 안내 · Backspace: 뒤로
           </p>
+
         </div>
 
         <UploadCard
