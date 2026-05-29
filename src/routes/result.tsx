@@ -180,8 +180,6 @@ function Result() {
           </section>
         ) : (
 
-          </section>
-        ) : (
           <section
             role="alert"
             className="rounded-3xl border-2 border-destructive bg-destructive/5 p-6"
