@@ -211,10 +211,10 @@ function Upload() {
           <BigButton
             onClick={start}
             disabled={!pdf || sending}
-            aria-label="분석 시작"
+            aria-label="분석 시작 (단축키 4)"
             className="disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {sending ? "전송 중..." : "분석 시작"}
+            {sending ? "전송 중..." : "분석 시작 (단축키 4)"}
           </BigButton>
           <p className="text-center text-base text-muted-foreground mt-3">
             {sending
