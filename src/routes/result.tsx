@@ -4,6 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak, stopSpeaking } from "@/lib/speak";
+import { expandImagesForSpeech, hasImageMarkdown } from "@/lib/imageDescribe";
 
 export const Route = createFileRoute("/result")({
   head: () => ({
