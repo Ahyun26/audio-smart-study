@@ -16,7 +16,7 @@ type AnalysisMeta = {
   pdfName?: string | null;
   audioName?: string | null;
   question?: string;
-  mode?: "요약" | "질문";
+  mode?: "summary" | "read_all" | "qa";
   uploadedAt?: string;
 };
 
@@ -29,14 +29,23 @@ function loadAnswer(): string {
     const data = Array.isArray(parsed) ? parsed[0] : parsed;
     if (typeof data === "string") return data;
     if (data && typeof data === "object") {
-      const a = (data as { answer?: unknown }).answer;
-      if (typeof a === "string") return a;
+      const d = data as {
+        display?: unknown;
+        summary_text?: unknown;
+        direct_text?: unknown;
+        answer?: unknown;
+      };
+      if (typeof d.display === "string" && d.display) return d.display;
+      if (typeof d.summary_text === "string" && d.summary_text) return d.summary_text;
+      if (typeof d.direct_text === "string" && d.direct_text) return d.direct_text;
+      if (typeof d.answer === "string") return d.answer;
     }
     return raw;
   } catch {
     return "";
   }
 }
+
 
 function loadMeta(): AnalysisMeta {
   if (typeof window === "undefined") return {};
@@ -109,7 +118,8 @@ function Result() {
             AI 분석 결과
           </p>
           <h2 className="mt-2 text-3xl font-extrabold leading-tight tracking-tight">
-            {meta.mode === "질문" ? "질문에 대한 답변" : "문서 요약"}
+            {meta.mode === "qa" ? "질문에 대한 답변" : "문서 요약"}
+
           </h2>
         </header>
 

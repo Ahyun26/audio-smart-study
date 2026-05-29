@@ -15,29 +15,67 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(bin);
 }
 
-export type WebhookMode = "요약" | "질문";
+export type WebhookMode = "summary" | "read_all" | "qa";
+
+export type WebhookResult = {
+  success?: boolean;
+  summary_text?: string;
+  direct_text?: string;
+  table_count?: number;
+  image_count?: number;
+  /** parsed summary_text (if JSON) or raw string */
+  parsed?: unknown;
+  /** human-readable text to display */
+  display: string;
+};
+
+function stripCodeFence(s: string): string {
+  return s
+    .replace(/^\s*```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
+}
+
+function buildDisplay(data: {
+  summary_text?: string;
+  direct_text?: string;
+}): { display: string; parsed?: unknown } {
+  const raw = data.summary_text ?? "";
+  if (raw) {
+    const clean = stripCodeFence(raw);
+    try {
+      const parsed = JSON.parse(clean);
+      return { parsed, display: JSON.stringify(parsed, null, 2) };
+    } catch {
+      return { display: clean };
+    }
+  }
+  if (data.direct_text) return { display: data.direct_text };
+  return { display: "" };
+}
 
 export async function sendToWebhook(input: {
   file: File;
   question: string;
   mode: WebhookMode;
-}): Promise<string> {
-  const base64 = await fileToBase64(input.file);
+  history?: unknown[];
+}): Promise<WebhookResult> {
+  const file_base64 = await fileToBase64(input.file);
 
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      file: base64,
-      question: input.question,
+      file_base64,
       mode: input.mode,
+      user_question: input.question,
+      history: input.history ?? [],
     }),
   });
 
   if (!res.ok) {
     const text = await res.text();
     let message = `Webhook 응답 오류: ${res.status} ${res.statusText}`;
-
     try {
       const data = text ? JSON.parse(text) : null;
       if (data && typeof data === "object") {
@@ -50,19 +88,31 @@ export async function sendToWebhook(input: {
     } catch {
       if (text) message = text;
     }
-
     throw new Error(message);
   }
 
   const text = await res.text();
+  let data: Record<string, unknown> = {};
   try {
-    const data = text ? JSON.parse(text) : null;
-    if (data && typeof data === "object") {
-      return (data as { answer?: string }).answer ?? text;
-    }
+    const parsed = text ? JSON.parse(text) : null;
+    if (Array.isArray(parsed)) data = (parsed[0] ?? {}) as Record<string, unknown>;
+    else if (parsed && typeof parsed === "object") data = parsed as Record<string, unknown>;
   } catch {
-    return text;
+    return { display: text };
   }
 
-  return text;
+  const { display, parsed } = buildDisplay({
+    summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
+    direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
+  });
+
+  return {
+    success: typeof data.success === "boolean" ? data.success : undefined,
+    summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
+    direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
+    table_count: typeof data.table_count === "number" ? data.table_count : undefined,
+    image_count: typeof data.image_count === "number" ? data.image_count : undefined,
+    parsed,
+    display,
+  };
 }
