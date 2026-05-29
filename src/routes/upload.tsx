@@ -45,11 +45,8 @@ function Upload() {
         e.preventDefault();
         speak("PDF 파일 선택 창을 엽니다.");
         pdfRef.current?.click();
-      } else if (e.key === "2") {
-        e.preventDefault();
-        speak("녹음 파일 선택 창을 엽니다.");
-        audioRef.current?.click();
       } else if (e.key === "3" || e.key === "Enter") {
+
         e.preventDefault();
         startRef.current?.();
       } else if (e.key === "0" || e.key === "?" || e.key === "h" || e.key === "H") {
