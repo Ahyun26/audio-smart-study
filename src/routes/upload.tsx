@@ -116,10 +116,10 @@ function Upload() {
         >
           <p className="font-bold mb-1">키보드 단축키</p>
           <p className="text-muted-foreground">
-            1: PDF · 3: 분석 시작 · 0: 안내 · Backspace: 뒤로
+            {pdf ? "2: 분석 시작 · Backspace: 뒤로" : "1: PDF 선택 · Backspace: 뒤로"}
           </p>
-
         </div>
+
 
         <UploadCard
           label="PDF 강의 자료 (단축키 1)"
