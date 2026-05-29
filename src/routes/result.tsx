@@ -91,14 +91,18 @@ function loadMeta(): AnalysisMeta {
 function Result() {
   const navigate = useNavigate();
   const [answer, setAnswer] = useState("");
+  const [parsed, setParsed] = useState<unknown>(null);
   const [meta, setMeta] = useState<AnalysisMeta>({});
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
-    setAnswer(loadAnswer());
+    const { text, parsed } = loadAnswer();
+    setAnswer(text);
+    setParsed(parsed);
     setMeta(loadMeta());
     return () => stopSpeaking();
   }, []);
+
 
   const hasAnswer = answer.trim().length > 0;
   const announcement = hasAnswer
