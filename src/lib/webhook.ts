@@ -1,7 +1,9 @@
 // 앱 서버를 통해 n8n webhook으로 전달
 export const WEBHOOK_URL = "/api/webhook";
 
-async function fileToBase64(file: File): Promise<string> {
+export type WebhookMode = "summary" | "read_all" | "qa" | "all";
+
+export async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const bytes = new Uint8Array(buf);
   let bin = "";
@@ -15,20 +17,11 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(bin);
 }
 
-export type WebhookMode = "summary" | "read_all" | "qa";
-
-export type WebhookResult = {
-  success?: boolean;
-  summary_text?: string;
-  direct_text?: string;
-  table_count?: number;
-  image_count?: number;
-  /** parsed summary_text (if JSON) or raw string */
-  parsed?: unknown;
-  /** human-readable text to display */
-  display: string;
-  /** natural language text suitable for TTS */
-  speech_text?: string;
+export type AnalysisResult = {
+  readall: string;
+  summary: string;
+  qa_ready: boolean;
+  raw?: Record<string, unknown>;
 };
 
 function stripCodeFence(s: string): string {
@@ -38,107 +31,44 @@ function stripCodeFence(s: string): string {
     .trim();
 }
 
-function buildSpeechText(parsed: unknown): string | undefined {
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
-  const p = parsed as Record<string, unknown>;
-  const str = (k: string) => (typeof p[k] === "string" ? (p[k] as string).trim() : "");
-  const subject = str("subject");
-  const docType = str("doc_type");
-  const keyConcept = str("key_concept");
-  const summary = str("summary");
-  const tableExplanation = str("table_explanation");
-  const keywordsRaw = p["keywords"];
-  const keywords = Array.isArray(keywordsRaw)
-    ? keywordsRaw.filter((x) => typeof x === "string").join(", ")
-    : typeof keywordsRaw === "string"
-      ? keywordsRaw
-      : "";
-
-  const parts: string[] = [];
-  if (subject && docType) parts.push(`이 문서는 ${subject} 관련 ${docType}입니다.`);
-  else if (docType) parts.push(`이 문서는 ${docType}입니다.`);
-  else if (subject) parts.push(`이 문서는 ${subject}에 관한 내용입니다.`);
-  if (keyConcept) parts.push(`핵심 개념은 ${keyConcept}입니다.`);
-  if (summary) parts.push(`요약하면, ${summary}`);
-  if (tableExplanation) parts.push(`표 설명: ${tableExplanation}`);
-  if (keywords) parts.push(`주요 키워드는 ${keywords}입니다.`);
-
-  const text = parts.join(" ").trim();
-  return text || undefined;
-}
-
-function buildDisplay(data: {
-  mode: WebhookMode;
-  summary_text?: string;
-  direct_text?: string;
-}): { display: string; parsed?: unknown; speech_text?: string } {
-  if (data.mode === "read_all") {
-    const t = data.direct_text ?? "";
-    return { display: t, speech_text: t || undefined };
-  }
-  const raw = data.summary_text ?? "";
-  if (raw) {
-    const clean = stripCodeFence(raw);
+function pickString(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (v && typeof v === "object") {
     try {
-      const parsed = JSON.parse(clean);
-      const speech_text = buildSpeechText(parsed);
-      return { parsed, display: JSON.stringify(parsed, null, 2), speech_text };
+      return JSON.stringify(v, null, 2);
     } catch {
-      return { display: clean, speech_text: clean };
+      return "";
     }
   }
-  const t = data.direct_text ?? "";
-  return { display: t, speech_text: t || undefined };
+  return "";
 }
 
-export async function sendToWebhook(input: {
-  file: File;
-  question: string;
+async function postWebhook(payload: {
+  file_base64: string;
   mode: WebhookMode;
+  user_question?: string;
   history?: unknown[];
-}): Promise<WebhookResult> {
-  const file_base64 = await fileToBase64(input.file);
-
-  console.log("[webhook] file:", {
-    name: input.file.name,
-    size: input.file.size,
-    type: input.file.type,
-    base64Length: file_base64.length,
-    base64Preview: file_base64.slice(0, 80),
-    startsWithPdfMagic: file_base64.startsWith("JVBERi"), // "%PDF-" in base64
-  });
-
-  if (input.file.size === 0) {
-    throw new Error("선택된 PDF 파일이 비어 있습니다. 다른 파일을 선택해 주세요.");
-  }
-  if (!file_base64.startsWith("JVBERi")) {
-    throw new Error(
-      "유효한 PDF 파일이 아닙니다. (PDF 매직 넘버 없음) 파일을 다시 확인해 주세요.",
-    );
-  }
-
+}): Promise<Record<string, unknown>> {
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      file_base64,
-      mode: input.mode,
-      user_question: input.question,
-      history: input.history ?? [],
+      file_base64: payload.file_base64,
+      mode: payload.mode,
+      user_question: payload.user_question ?? "",
+      history: payload.history ?? [],
     }),
   });
 
+  const text = await res.text();
   if (!res.ok) {
-    const text = await res.text();
     let message = `Webhook 응답 오류: ${res.status} ${res.statusText}`;
     try {
       const data = text ? JSON.parse(text) : null;
       if (data && typeof data === "object") {
-        const errorMessage = (data as { error?: string }).error;
-        const details = (data as { details?: string }).details;
-        if (errorMessage) {
-          message = details ? `${errorMessage} (${details})` : errorMessage;
-        }
+        const err = (data as { error?: string }).error;
+        const det = (data as { details?: string }).details;
+        if (err) message = det ? `${err} (${det})` : err;
       }
     } catch {
       if (text) message = text;
@@ -146,31 +76,99 @@ export async function sendToWebhook(input: {
     throw new Error(message);
   }
 
-  const text = await res.text();
-  let data: Record<string, unknown> = {};
   try {
-    const parsed = text ? JSON.parse(text) : null;
-    if (Array.isArray(parsed)) data = (parsed[0] ?? {}) as Record<string, unknown>;
-    else if (parsed && typeof parsed === "object") data = parsed as Record<string, unknown>;
+    const parsed = text ? JSON.parse(text) : {};
+    if (Array.isArray(parsed)) return (parsed[0] ?? {}) as Record<string, unknown>;
+    if (parsed && typeof parsed === "object") return parsed as Record<string, unknown>;
+    return { raw: text };
   } catch {
-    return { display: text };
+    return { raw: text };
+  }
+}
+
+/**
+ * 초기 분석: 전체 읽기 + 요약을 한 번에 요청.
+ * n8n 응답: { readall, summary, qa_ready }
+ */
+export async function sendAnalysis(input: { file: File }): Promise<{
+  result: AnalysisResult;
+  file_base64: string;
+}> {
+  const file_base64 = await fileToBase64(input.file);
+
+  if (input.file.size === 0) {
+    throw new Error("선택된 PDF 파일이 비어 있습니다.");
+  }
+  if (!file_base64.startsWith("JVBERi")) {
+    throw new Error("유효한 PDF 파일이 아닙니다.");
   }
 
-  const { display, parsed, speech_text } = buildDisplay({
-    mode: input.mode,
-    summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
-    direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
-  });
+  const data = await postWebhook({ file_base64, mode: "all" });
+
+  // readall / summary 추출 (응답 키 변형 허용)
+  const readallRaw =
+    pickString(data.readall) ||
+    pickString(data.read_all) ||
+    pickString(data.direct_text);
+  const summaryRaw =
+    pickString(data.summary) || pickString(data.summary_text);
+
+  // summary가 JSON 문자열인 경우 보기 좋게 변환
+  let summary = summaryRaw;
+  if (summary) {
+    const clean = stripCodeFence(summary);
+    try {
+      const parsed = JSON.parse(clean);
+      summary = typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2);
+    } catch {
+      summary = clean;
+    }
+  }
+
+  const qa_ready =
+    typeof data.qa_ready === "boolean" ? data.qa_ready : true;
 
   return {
-    success: typeof data.success === "boolean" ? data.success : undefined,
-    summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
-    direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
-    table_count: typeof data.table_count === "number" ? data.table_count : undefined,
-    image_count: typeof data.image_count === "number" ? data.image_count : undefined,
-    parsed,
-    display,
-    speech_text,
+    result: {
+      readall: readallRaw,
+      summary,
+      qa_ready,
+      raw: data,
+    },
+    file_base64,
   };
 }
 
+/**
+ * QA: 저장된 file_base64를 사용해 질문을 전송하고 답변 텍스트를 반환.
+ */
+export async function askQuestion(input: {
+  file_base64: string;
+  question: string;
+  history?: unknown[];
+}): Promise<string> {
+  const data = await postWebhook({
+    file_base64: input.file_base64,
+    mode: "qa",
+    user_question: input.question,
+    history: input.history,
+  });
+  const ans =
+    pickString(data.answer) ||
+    pickString(data.summary_text) ||
+    pickString(data.direct_text) ||
+    pickString(data.readall);
+  const clean = stripCodeFence(ans);
+  try {
+    const parsed = JSON.parse(clean);
+    if (typeof parsed === "string") return parsed;
+    if (parsed && typeof parsed === "object") {
+      const a = (parsed as Record<string, unknown>).answer;
+      if (typeof a === "string") return a;
+      return JSON.stringify(parsed, null, 2);
+    }
+  } catch {
+    /* ignore */
+  }
+  return clean;
+}
