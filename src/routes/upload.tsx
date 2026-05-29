@@ -61,6 +61,8 @@ function Upload() {
         JSON.stringify({ answer: result }),
       );
       speak("분석이 완료되었습니다.");
+      navigate({ to: "/result" });
+
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
       setError(`Webhook 전송 실패: ${msg}`);
