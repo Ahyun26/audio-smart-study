@@ -61,6 +61,12 @@ function Result() {
     return () => stopSpeaking();
   }, []);
 
+  const hasAnswer = answer.trim().length > 0;
+  const announcement = hasAnswer
+    ? "분석이 완료되었습니다. 결과를 확인하세요."
+    : "분석 결과를 불러오는 중입니다.";
+
+
   const play = () => {
     if (!hasAnswer) return;
     stopSpeaking();
