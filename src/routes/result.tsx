@@ -14,31 +14,62 @@ export const Route = createFileRoute("/result")({
 
 type AnalysisMeta = {
   pdfName?: string | null;
-  audioName?: string | null;
-  question?: string;
-  mode?: "summary" | "read_all" | "qa";
-  uploadedAt?: string;
-};
+function stripCodeFence(s: string): string {
+  return s
+    .replace(/^\s*```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "")
+    .trim();
+}
 
-function loadAnswer(): string {
-  if (typeof window === "undefined") return "";
+function tryParseJson(s: string): unknown {
+  try {
+    return JSON.parse(stripCodeFence(s));
+  } catch {
+    return null;
+  }
+}
+
+function loadAnswer(): { text: string; parsed: unknown } {
+  if (typeof window === "undefined") return { text: "", parsed: null };
   try {
     const raw = sessionStorage.getItem("analysis_result");
-    if (!raw) return "";
-    const parsed = JSON.parse(raw);
-    const data = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (typeof data === "string") return data;
+    if (!raw) return { text: "", parsed: null };
+    const parsedRoot = JSON.parse(raw);
+    const data = Array.isArray(parsedRoot) ? parsedRoot[0] : parsedRoot;
+    if (typeof data === "string") {
+      return { text: data, parsed: tryParseJson(data) };
+    }
     if (data && typeof data === "object") {
       const d = data as {
         display?: unknown;
+        parsed?: unknown;
         summary_text?: unknown;
         direct_text?: unknown;
         answer?: unknown;
       };
-      if (typeof d.display === "string" && d.display) return d.display;
-      if (typeof d.summary_text === "string" && d.summary_text) return d.summary_text;
-      if (typeof d.direct_text === "string" && d.direct_text) return d.direct_text;
-      if (typeof d.answer === "string") return d.answer;
+      // summary_text 안의 JSON 문자열을 우선 파싱
+      if (typeof d.summary_text === "string" && d.summary_text) {
+        const parsed = d.parsed ?? tryParseJson(d.summary_text);
+        const text =
+          typeof d.display === "string" && d.display
+            ? d.display
+            : parsed
+              ? JSON.stringify(parsed, null, 2)
+              : stripCodeFence(d.summary_text);
+        return { text, parsed };
+      }
+      if (typeof d.display === "string" && d.display)
+        return { text: d.display, parsed: d.parsed ?? tryParseJson(d.display) };
+      if (typeof d.direct_text === "string" && d.direct_text)
+        return { text: d.direct_text, parsed: null };
+      if (typeof d.answer === "string") return { text: d.answer, parsed: null };
+    }
+    return { text: raw, parsed: null };
+  } catch {
+    return { text: "", parsed: null };
+  }
+}
+
     }
     return raw;
   } catch {
