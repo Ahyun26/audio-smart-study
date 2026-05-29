@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 const N8N_WEBHOOK_URL =
   "https://hp432300.app.n8n.cloud/webhook/docvoice/upload";
 
-type WebhookMode = "summary" | "read_all" | "qa";
+type WebhookMode = "summary" | "read_all" | "qa" | "all";
 
 type WebhookPayload = {
   file_base64: string;
@@ -27,7 +27,12 @@ function parsePayload(input: unknown): WebhookPayload {
   if (!p.file_base64 || typeof p.file_base64 !== "string") {
     throw new Error("PDF 파일 데이터가 없습니다.");
   }
-  if (p.mode !== "summary" && p.mode !== "read_all" && p.mode !== "qa") {
+  if (
+    p.mode !== "summary" &&
+    p.mode !== "read_all" &&
+    p.mode !== "qa" &&
+    p.mode !== "all"
+  ) {
     throw new Error("mode 값이 올바르지 않습니다.");
   }
   return {
