@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak } from "@/lib/speak";
-import { sendToWebhook } from "@/lib/webhook";
+import { sendToWebhook, type WebhookMode } from "@/lib/webhook";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -21,36 +21,51 @@ function Upload() {
   const audioRef = useRef<HTMLInputElement>(null);
   const [pdf, setPdf] = useState<Slot>(null);
   const [audio, setAudio] = useState<Slot>(null);
+  const [question, setQuestion] = useState("");
+  const [mode, setMode] = useState<WebhookMode>("요약");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [answer, setAnswer] = useState<string | null>(null);
 
   const announcement =
     "파일 업로드 화면입니다. PDF 파일과 강의 녹음 파일을 업로드할 수 있습니다.";
 
   const start = async () => {
+    if (!pdf) {
+      setError("PDF 파일을 업로드해 주세요.");
+      return;
+    }
     setError(null);
+    setAnswer(null);
     setSending(true);
     speak("문서를 분석 중입니다. 잠시만 기다려 주세요.");
     try {
-      // 파일 메타데이터를 미리 저장 (분석 화면에서 사용)
       sessionStorage.setItem(
         "analysis_meta",
         JSON.stringify({
           pdfName: pdf?.name ?? null,
           audioName: audio?.name ?? null,
+          question,
+          mode,
           uploadedAt: new Date().toISOString(),
         }),
       );
       const result = await sendToWebhook({
-        pdf: pdf?.file ?? null,
-        audio: audio?.file ?? null,
+        file: pdf.file,
+        question: question.trim(),
+        mode,
       });
-      sessionStorage.setItem("analysis_result", JSON.stringify(result));
-      navigate({ to: "/analyzing" });
+      setAnswer(result);
+      sessionStorage.setItem(
+        "analysis_result",
+        JSON.stringify({ answer: result }),
+      );
+      speak("분석이 완료되었습니다.");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
       setError(`Webhook 전송 실패: ${msg}`);
-      speak("웹훅 전송에 실패했습니다. URL과 n8n 서버 상태를 확인하세요.");
+      speak("웹훅 전송에 실패했습니다.");
+    } finally {
       setSending(false);
     }
   };
@@ -73,7 +88,7 @@ function Upload() {
         />
 
         <UploadCard
-          label="강의 녹음 파일"
+          label="강의 녹음 파일 (선택)"
           hint="MP3, M4A, WAV 등 음성 파일"
           file={audio}
           accept="audio/*"
@@ -84,6 +99,50 @@ function Upload() {
           }}
         />
 
+        <div className="rounded-3xl border-2 border-border bg-card p-6 flex flex-col gap-4">
+          <div>
+            <label className="text-xl font-bold" htmlFor="mode">
+              모드
+            </label>
+            <div className="mt-3 flex gap-3" id="mode">
+              {(["요약", "질문"] as WebhookMode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  aria-pressed={mode === m}
+                  className={[
+                    "flex-1 rounded-2xl border-2 px-4 py-3 text-lg font-bold transition-colors",
+                    mode === m
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background hover:border-primary",
+                  ].join(" ")}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="question" className="text-xl font-bold">
+              질문 {mode === "요약" && <span className="text-base text-muted-foreground font-medium">(선택)</span>}
+            </label>
+            <textarea
+              id="question"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              rows={3}
+              placeholder={
+                mode === "질문"
+                  ? "예: 옴의 법칙을 쉽게 설명해 주세요"
+                  : "원하는 요약 방향을 적어 주세요 (선택)"
+              }
+              className="mt-3 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-lg outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+
         {error && (
           <div
             role="alert"
@@ -93,19 +152,39 @@ function Upload() {
           </div>
         )}
 
+        {answer && (
+          <div className="rounded-3xl border-2 border-success bg-success/5 p-6">
+            <p className="text-xl font-bold mb-3">분석 결과</p>
+            <p className="text-lg whitespace-pre-wrap break-words leading-relaxed">
+              {answer}
+            </p>
+            <div className="mt-4">
+              <BigButton
+                variant="secondary"
+                onClick={() => navigate({ to: "/result" })}
+                aria-label="필기노트 보기"
+              >
+                필기노트 보기
+              </BigButton>
+            </div>
+          </div>
+        )}
+
         <div className="pt-4">
           <BigButton
             onClick={start}
-            disabled={(!pdf && !audio) || sending}
+            disabled={!pdf || sending}
             aria-label="분석 시작"
             className="disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {sending ? "전송 중..." : "분석 시작"}
           </BigButton>
           <p className="text-center text-base text-muted-foreground mt-3">
-            {pdf || audio
-              ? "준비되었습니다. 분석을 시작하세요."
-              : "파일을 하나 이상 업로드해 주세요."}
+            {sending
+              ? "n8n으로 전송 중입니다..."
+              : pdf
+                ? "준비되었습니다. 분석을 시작하세요."
+                : "PDF 파일을 업로드해 주세요."}
           </p>
         </div>
       </div>

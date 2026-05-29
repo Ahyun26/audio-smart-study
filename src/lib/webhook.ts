@@ -1,16 +1,6 @@
 // n8n webhook 연동
-// 사용자가 직접 URL을 변경할 수 있도록 localStorage 우선
-const DEFAULT_WEBHOOK_URL =
-  "http://localhost:5678/webhook-test/docvoice/upload";
-
-export function getWebhookUrl(): string {
-  if (typeof window === "undefined") return DEFAULT_WEBHOOK_URL;
-  return localStorage.getItem("webhook_url") || DEFAULT_WEBHOOK_URL;
-}
-
-export function setWebhookUrl(url: string) {
-  if (typeof window !== "undefined") localStorage.setItem("webhook_url", url);
-}
+export const WEBHOOK_URL =
+  "https://xxx.app.n8n.cloud/webhook/docvoice/upload";
 
 async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
@@ -26,51 +16,43 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(bin);
 }
 
-export type WebhookPayload = {
-  pdf: { name: string; size: number; mime: string; base64: string } | null;
-  audio: { name: string; size: number; mime: string; base64: string } | null;
-  uploadedAt: string;
-};
+export type WebhookMode = "요약" | "질문";
 
 export async function sendToWebhook(input: {
-  pdf: File | null;
-  audio: File | null;
-}): Promise<unknown> {
-  const payload: WebhookPayload = {
-    pdf: input.pdf
-      ? {
-          name: input.pdf.name,
-          size: input.pdf.size,
-          mime: input.pdf.type || "application/pdf",
-          base64: await fileToBase64(input.pdf),
-        }
-      : null,
-    audio: input.audio
-      ? {
-          name: input.audio.name,
-          size: input.audio.size,
-          mime: input.audio.type || "audio/mpeg",
-          base64: await fileToBase64(input.audio),
-        }
-      : null,
-    uploadedAt: new Date().toISOString(),
-  };
+  file: File;
+  question: string;
+  mode: WebhookMode;
+}): Promise<string> {
+  const base64 = await fileToBase64(input.file);
 
-  const res = await fetch(getWebhookUrl(), {
+  const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      file: base64,
+      question: input.question,
+      mode: input.mode,
+    }),
   });
 
   if (!res.ok) {
     throw new Error(`Webhook 응답 오류: ${res.status} ${res.statusText}`);
   }
 
-  // n8n이 JSON을 반환하지 않을 수도 있으므로 text 후 파싱
   const text = await res.text();
+  let answer = "";
   try {
-    return text ? JSON.parse(text) : null;
+    const data = text ? JSON.parse(text) : null;
+    if (data && typeof data === "object") {
+      answer =
+        (data as { answer?: string }).answer ??
+        (Array.isArray(data) && data[0]?.answer) ??
+        "";
+    }
+    if (!answer) answer = text;
   } catch {
-    return { raw: text };
+    answer = text;
   }
+
+  return answer;
 }
