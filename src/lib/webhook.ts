@@ -27,6 +27,8 @@ export type WebhookResult = {
   parsed?: unknown;
   /** human-readable text to display */
   display: string;
+  /** natural language text suitable for TTS */
+  speech_text?: string;
 };
 
 function stripCodeFence(s: string): string {
@@ -36,27 +38,59 @@ function stripCodeFence(s: string): string {
     .trim();
 }
 
-function buildDisplay(data: {
+function buildSpeechText(parsed: unknown): string | undefined {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+  const p = parsed as Record<string, unknown>;
+  const str = (k: string) => (typeof p[k] === "string" ? (p[k] as string).trim() : "");
+  const subject = str("subject");
+  const docType = str("doc_type");
+  const keyConcept = str("key_concept");
+  const summary = str("summary");
+  const tableExplanation = str("table_explanation");
+  const keywordsRaw = p["keywords"];
+  const keywords = Array.isArray(keywordsRaw)
+    ? keywordsRaw.filter((x) => typeof x === "string").join(", ")
+    : typeof keywordsRaw === "string"
+      ? keywordsRaw
+      : "";
 
+  const parts: string[] = [];
+  if (subject && docType) parts.push(`이 문서는 ${subject} 관련 ${docType}입니다.`);
+  else if (docType) parts.push(`이 문서는 ${docType}입니다.`);
+  else if (subject) parts.push(`이 문서는 ${subject}에 관한 내용입니다.`);
+  if (keyConcept) parts.push(`핵심 개념은 ${keyConcept}입니다.`);
+  if (summary) parts.push(`요약하면, ${summary}`);
+  if (tableExplanation) parts.push(`표 설명: ${tableExplanation}`);
+  if (keywords) parts.push(`주요 키워드는 ${keywords}입니다.`);
+
+  const text = parts.join(" ").trim();
+  return text || undefined;
+}
+
+function buildDisplay(data: {
   mode: WebhookMode;
   summary_text?: string;
   direct_text?: string;
-}): { display: string; parsed?: unknown } {
+}): { display: string; parsed?: unknown; speech_text?: string } {
   if (data.mode === "read_all") {
-    return { display: data.direct_text ?? "" };
+    const t = data.direct_text ?? "";
+    return { display: t, speech_text: t || undefined };
   }
   const raw = data.summary_text ?? "";
   if (raw) {
     const clean = stripCodeFence(raw);
     try {
       const parsed = JSON.parse(clean);
-      return { parsed, display: JSON.stringify(parsed, null, 2) };
+      const speech_text = buildSpeechText(parsed);
+      return { parsed, display: JSON.stringify(parsed, null, 2), speech_text };
     } catch {
-      return { display: clean };
+      return { display: clean, speech_text: clean };
     }
   }
-  return { display: data.direct_text ?? "" };
+  const t = data.direct_text ?? "";
+  return { display: t, speech_text: t || undefined };
 }
+
 export async function sendToWebhook(input: {
   file: File;
   question: string;
