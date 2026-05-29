@@ -151,8 +151,11 @@ export async function sendAnalysis(input: { file: File }): Promise<{
   console.log("readall 요청 시작");
   console.log("summary 요청 시작");
 
+  const READALL_INSTRUCTION =
+    '아래 문서 전체를 처음부터 끝까지 읽어줘. 마크다운 기호(#, *, **, --, |, >, [, ])는 모두 제거. 너는 문서 내용을 읽어주는 도구야. 인사 금지. 질문 금지. 안내 멘트 금지. 받은 문서 내용만 바로 출력해.';
+
   const [readallRes, summaryRes] = await Promise.all([
-    postWebhook({ file_base64, mode: "readall" }),
+    postWebhook({ file_base64, mode: "readall", user_question: READALL_INSTRUCTION }),
     postWebhook({ file_base64, mode: "summary" }),
   ]);
 
