@@ -127,8 +127,19 @@ function Upload() {
       <VoiceAnnouncer message={announcement} />
 
       <div className="flex-1 flex flex-col gap-5 max-w-xl mx-auto w-full mt-4">
+        <div
+          className="rounded-2xl bg-muted/40 border border-border px-5 py-4 text-base"
+          role="note"
+          aria-label="키보드 단축키 안내"
+        >
+          <p className="font-bold mb-1">키보드 단축키</p>
+          <p className="text-muted-foreground">
+            1: PDF 선택 · 2: 녹음 선택 · 3: 질문 입력 · 4: 분석 시작 · 0: 안내 다시 듣기 · Backspace: 뒤로
+          </p>
+        </div>
+
         <UploadCard
-          label="PDF 강의 자료"
+          label="PDF 강의 자료 (단축키 1)"
           hint="강의 PDF 파일을 선택하세요"
           file={pdf}
           accept="application/pdf"
@@ -140,7 +151,7 @@ function Upload() {
         />
 
         <UploadCard
-          label="강의 녹음 파일 (선택)"
+          label="강의 녹음 파일 (선택, 단축키 2)"
           hint="MP3, M4A, WAV 등 음성 파일"
           file={audio}
           accept="audio/*"
@@ -150,6 +161,7 @@ function Upload() {
             speak(`녹음 파일 ${f.name} 이 업로드되었습니다.`);
           }}
         />
+
 
         <div className="rounded-3xl border-2 border-border bg-card p-6">
           <label htmlFor="question" className="text-xl font-bold">
