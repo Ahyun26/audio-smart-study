@@ -15,33 +15,42 @@ export const Route = createFileRoute("/upload")({
 
 type Slot = { file: File; name: string; size: number } | null;
 
+const MODE_LABEL: Record<WebhookMode, string> = {
+  read_all: "전체 읽기",
+  summary: "요약",
+  qa: "질문하기",
+};
+
 function Upload() {
   const navigate = useNavigate();
   const pdfRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
+  const questionRef = useRef<HTMLTextAreaElement>(null);
+  const startRef = useRef<(() => void) | null>(null);
+
   const [pdf, setPdf] = useState<Slot>(null);
   const [audio, setAudio] = useState<Slot>(null);
+  const [mode, setMode] = useState<WebhookMode>("summary");
   const [question, setQuestion] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answer, setAnswer] = useState<string | null>(null);
 
-
   const announcement =
-    "파일 업로드 화면입니다. 키보드 단축키를 사용하실 수 있습니다. 1번은 PDF 파일 선택, 2번은 녹음 파일 선택, 3번은 질문 입력, 4번은 분석 시작, 0번은 단축키 안내 다시 듣기, 백스페이스는 이전 화면입니다.";
+    "파일 업로드 화면입니다. 키보드 단축키. 1번 PDF 선택, 2번 녹음 선택, 3번 전체 읽기 모드, 4번 요약 모드, 5번 질문 모드, 6번 분석 시작, 0번 안내 다시 듣기, 백스페이스 이전 화면.";
 
   const helpText =
-    "단축키 안내. 1번 PDF 파일 선택. 2번 녹음 파일 선택. 3번 질문 입력. 4번 분석 시작. 0번 이 안내 다시 듣기. 백스페이스 이전 화면.";
+    "단축키 안내. 1번 PDF 파일 선택. 2번 녹음 파일 선택. 3번 전체 읽기 모드. 4번 요약 모드. 5번 질문 모드. 질문 모드일 때 큐 키를 누르면 질문 입력으로 이동합니다. 6번 분석 시작. 0번 이 안내 다시 듣기. 백스페이스 이전 화면.";
 
-  const questionRef = useRef<HTMLTextAreaElement>(null);
-  const startRef = useRef<(() => void) | null>(null);
+  const selectMode = (m: WebhookMode) => {
+    setMode(m);
+    speak(`${MODE_LABEL[m]} 모드를 선택했습니다.`);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // 입력 중에는 단축키 무시 (질문 textarea 등)
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT")) {
-        // textarea 안에서도 Escape로 빠져나갈 수 있게
         if (e.key === "Escape") {
           (t as HTMLElement).blur();
           speak("입력을 종료했습니다.");
@@ -58,9 +67,22 @@ function Upload() {
         audioRef.current?.click();
       } else if (e.key === "3") {
         e.preventDefault();
-        speak("질문 입력란으로 이동합니다. 입력을 마치려면 이에스시 키를 누르세요.");
-        questionRef.current?.focus();
-      } else if (e.key === "4" || e.key === "Enter") {
+        selectMode("read_all");
+      } else if (e.key === "4") {
+        e.preventDefault();
+        selectMode("summary");
+      } else if (e.key === "5") {
+        e.preventDefault();
+        selectMode("qa");
+      } else if (e.key === "q" || e.key === "Q") {
+        e.preventDefault();
+        if (mode === "qa") {
+          speak("질문 입력란으로 이동합니다. 입력을 마치려면 이에스시 키를 누르세요.");
+          questionRef.current?.focus();
+        } else {
+          speak("질문 모드가 아닙니다. 5번을 눌러 질문 모드를 선택하세요.");
+        }
+      } else if (e.key === "6" || e.key === "Enter") {
         e.preventDefault();
         startRef.current?.();
       } else if (e.key === "0" || e.key === "?" || e.key === "h" || e.key === "H") {
@@ -74,11 +96,16 @@ function Upload() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navigate]);
+  }, [navigate, mode]);
 
   const start = async () => {
     if (!pdf) {
       setError("PDF 파일을 업로드해 주세요.");
+      return;
+    }
+    if (mode === "qa" && !question.trim()) {
+      setError("질문 모드에서는 질문을 입력해 주세요. (단축키 Q)");
+      speak("질문 모드에서는 질문을 입력해 주세요.");
       return;
     }
     setError(null);
@@ -86,8 +113,7 @@ function Upload() {
     setSending(true);
     speak("문서를 분석 중입니다. 잠시만 기다려 주세요.");
     try {
-      const q = question.trim();
-      const mode: WebhookMode = q ? "qa" : "summary";
+      const q = mode === "qa" ? question.trim() : "";
       sessionStorage.setItem(
         "analysis_meta",
         JSON.stringify({
@@ -98,16 +124,11 @@ function Upload() {
           uploadedAt: new Date().toISOString(),
         }),
       );
-      const result = await sendToWebhook({
-        file: pdf.file,
-        question: q,
-        mode,
-      });
+      const result = await sendToWebhook({ file: pdf.file, question: q, mode });
       setAnswer(result.display);
       sessionStorage.setItem("analysis_result", JSON.stringify(result));
       speak("분석이 완료되었습니다.");
       navigate({ to: "/result" });
-
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
       setError(`Webhook 전송 실패: ${msg}`);
@@ -117,7 +138,6 @@ function Upload() {
     }
   };
 
-  // 키보드 단축키에서 호출할 수 있도록 최신 start 함수 보관
   useEffect(() => {
     startRef.current = start;
   });
@@ -134,7 +154,7 @@ function Upload() {
         >
           <p className="font-bold mb-1">키보드 단축키</p>
           <p className="text-muted-foreground">
-            1: PDF 선택 · 2: 녹음 선택 · 3: 질문 입력 · 4: 분석 시작 · 0: 안내 다시 듣기 · Backspace: 뒤로
+            1: PDF · 2: 녹음 · 3: 전체읽기 · 4: 요약 · 5: 질문 · 6: 분석 시작 · 0: 안내 · Backspace: 뒤로
           </p>
         </div>
 
@@ -162,23 +182,53 @@ function Upload() {
           }}
         />
 
-
         <div className="rounded-3xl border-2 border-border bg-card p-6">
-          <label htmlFor="question" className="text-xl font-bold">
-            질문 <span className="text-base text-muted-foreground font-medium">(선택, 단축키 3)</span>
-          </label>
-          <textarea
-            id="question"
-            ref={questionRef}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            rows={3}
-            placeholder="궁금한 내용이나 원하는 요약 방향을 적어 주세요 (입력 종료: Esc)"
-            className="mt-3 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-lg outline-none focus:border-primary"
-          />
+          <p className="text-xl font-bold mb-3">분석 모드 선택</p>
+          <div
+            role="radiogroup"
+            aria-label="분석 모드"
+            className="grid grid-cols-1 gap-3"
+          >
+            <ModeOption
+              num={3}
+              label="전체 읽기"
+              hint="문서 본문을 그대로 읽어 줍니다"
+              selected={mode === "read_all"}
+              onClick={() => selectMode("read_all")}
+            />
+            <ModeOption
+              num={4}
+              label="요약"
+              hint="핵심 개념과 요약을 정리합니다"
+              selected={mode === "summary"}
+              onClick={() => selectMode("summary")}
+            />
+            <ModeOption
+              num={5}
+              label="질문하기"
+              hint="문서에 대해 질문하고 답변을 받습니다"
+              selected={mode === "qa"}
+              onClick={() => selectMode("qa")}
+            />
+          </div>
+
+          {mode === "qa" && (
+            <div className="mt-5">
+              <label htmlFor="question" className="text-lg font-bold">
+                질문 입력 <span className="text-base text-muted-foreground font-medium">(단축키 Q)</span>
+              </label>
+              <textarea
+                id="question"
+                ref={questionRef}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                rows={3}
+                placeholder="문서에 대해 궁금한 점을 입력하세요 (종료: Esc)"
+                className="mt-3 w-full rounded-2xl border-2 border-border bg-background px-4 py-3 text-lg outline-none focus:border-primary"
+              />
+            </div>
+          )}
         </div>
-
-
 
         {error && (
           <div
@@ -192,9 +242,7 @@ function Upload() {
         {answer && (
           <div className="rounded-3xl border-2 border-success bg-success/5 p-6">
             <p className="text-xl font-bold mb-3">분석 결과</p>
-            <p className="text-lg whitespace-pre-wrap break-words leading-relaxed">
-              {answer}
-            </p>
+            <p className="text-lg whitespace-pre-wrap break-words leading-relaxed">{answer}</p>
             <div className="mt-4">
               <BigButton
                 variant="secondary"
@@ -211,21 +259,72 @@ function Upload() {
           <BigButton
             onClick={start}
             disabled={!pdf || sending}
-            aria-label="분석 시작 (단축키 4)"
+            aria-label="분석 시작 (단축키 6)"
             className="disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {sending ? "전송 중..." : "분석 시작 (단축키 4)"}
+            {sending ? "전송 중..." : "분석 시작 (단축키 6)"}
           </BigButton>
           <p className="text-center text-base text-muted-foreground mt-3">
             {sending
               ? "n8n으로 전송 중입니다..."
               : pdf
-                ? "준비되었습니다. 분석을 시작하세요."
+                ? `${MODE_LABEL[mode]} 모드로 분석을 시작하세요.`
                 : "PDF 파일을 업로드해 주세요."}
           </p>
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function ModeOption({
+  num,
+  label,
+  hint,
+  selected,
+  onClick,
+}: {
+  num: number;
+  label: string;
+  hint: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onClick}
+      className={[
+        "w-full rounded-2xl border-2 px-5 py-4 text-left transition-colors",
+        "focus-visible:outline-4 focus-visible:outline-ring focus-visible:outline-offset-2",
+        selected
+          ? "border-primary bg-primary/5"
+          : "border-border bg-background hover:border-primary",
+      ].join(" ")}
+    >
+      <div className="flex items-center gap-4">
+        <span
+          aria-hidden
+          className={[
+            "shrink-0 grid place-items-center w-10 h-10 rounded-full text-lg font-bold",
+            selected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+          ].join(" ")}
+        >
+          {num}
+        </span>
+        <div className="flex-1">
+          <p className="text-lg font-bold">{label}</p>
+          <p className="text-base text-muted-foreground">{hint}</p>
+        </div>
+        {selected && (
+          <span className="text-sm font-bold text-primary" aria-hidden>
+            선택됨
+          </span>
+        )}
+      </div>
+    </button>
   );
 }
 
@@ -249,9 +348,7 @@ function UploadCard({
     <div
       className={[
         "rounded-3xl border-2 p-6 transition-colors",
-        ready
-          ? "border-success bg-success/5"
-          : "border-border bg-card hover:border-primary",
+        ready ? "border-success bg-success/5" : "border-border bg-card hover:border-primary",
       ].join(" ")}
     >
       <input
@@ -274,9 +371,7 @@ function UploadCard({
           aria-hidden
           className={[
             "shrink-0 rounded-full px-4 py-2 text-sm font-bold",
-            ready
-              ? "bg-success text-success-foreground"
-              : "bg-muted text-muted-foreground",
+            ready ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground",
           ].join(" ")}
         >
           {ready ? "완료" : "대기"}
