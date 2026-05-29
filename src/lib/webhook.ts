@@ -1,7 +1,7 @@
 // 앱 서버를 통해 n8n webhook으로 전달
 export const WEBHOOK_URL = "/api/webhook";
 
-export type WebhookMode = "summary" | "read_all" | "qa" | "all";
+export type WebhookMode = "summary" | "readall" | "read_all" | "qa" | "all";
 
 export async function fileToBase64(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
@@ -152,7 +152,7 @@ export async function sendAnalysis(input: { file: File }): Promise<{
   console.log("summary 요청 시작");
 
   const [readallRes, summaryRes] = await Promise.all([
-    postWebhook({ file_base64, mode: "read_all" }),
+    postWebhook({ file_base64, mode: "readall" }),
     postWebhook({ file_base64, mode: "summary" }),
   ]);
 
