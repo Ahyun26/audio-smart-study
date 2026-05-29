@@ -25,12 +25,14 @@ function Upload() {
   const [error, setError] = useState<string | null>(null);
 
 
-  const announcement =
-    "파일 업로드 화면입니다. 1번 PDF 선택, 3번 분석 시작, 0번 안내 다시 듣기, 백스페이스 이전 화면.";
+  const announcement = pdf
+    ? "파일이 선택되었습니다. 분석을 시작하려면 2번을 누르세요."
+    : "파일을 선택하려면 1번을 누르세요.";
 
+  const helpText = pdf
+    ? "파일이 선택되었습니다. 분석을 시작하려면 2번을 누르세요. 백스페이스는 이전 화면입니다."
+    : "파일을 선택하려면 1번을 누르세요. 백스페이스는 이전 화면입니다.";
 
-  const helpText =
-    "단축키 안내. 1번 PDF 파일 선택. 3번 분석 시작. 0번 이 안내 다시 듣기. 백스페이스 이전 화면.";
 
 
   useEffect(() => {
