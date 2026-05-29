@@ -18,13 +18,12 @@ type Slot = { file: File; name: string; size: number } | null;
 function Upload() {
   const navigate = useNavigate();
   const pdfRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
   const startRef = useRef<(() => void) | null>(null);
 
   const [pdf, setPdf] = useState<Slot>(null);
-  const [audio, setAudio] = useState<Slot>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
 
   const announcement =
     "파일 업로드 화면입니다. 1번 PDF 선택, 2번 녹음 선택, 3번 분석 시작, 0번 안내 다시 듣기, 백스페이스 이전 화면.";
