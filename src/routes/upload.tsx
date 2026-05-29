@@ -25,12 +25,14 @@ function Upload() {
   const [error, setError] = useState<string | null>(null);
 
 
-  const announcement =
-    "파일 업로드 화면입니다. 1번 PDF 선택, 3번 분석 시작, 0번 안내 다시 듣기, 백스페이스 이전 화면.";
+  const announcement = pdf
+    ? "파일이 선택되었습니다. 분석을 시작하려면 2번을 누르세요."
+    : "파일을 선택하려면 1번을 누르세요.";
 
+  const helpText = pdf
+    ? "파일이 선택되었습니다. 분석을 시작하려면 2번을 누르세요. 백스페이스는 이전 화면입니다."
+    : "파일을 선택하려면 1번을 누르세요. 백스페이스는 이전 화면입니다.";
 
-  const helpText =
-    "단축키 안내. 1번 PDF 파일 선택. 3번 분석 시작. 0번 이 안내 다시 듣기. 백스페이스 이전 화면.";
 
 
   useEffect(() => {
@@ -46,11 +48,11 @@ function Upload() {
         e.preventDefault();
         speak("PDF 파일 선택 창을 엽니다.");
         pdfRef.current?.click();
-      } else if (e.key === "3" || e.key === "Enter") {
-
+      } else if (e.key === "2" || e.key === "Enter") {
         e.preventDefault();
         startRef.current?.();
       } else if (e.key === "0" || e.key === "?" || e.key === "h" || e.key === "H") {
+
         e.preventDefault();
         speak(helpText);
       } else if (e.key === "Backspace") {
@@ -114,10 +116,10 @@ function Upload() {
         >
           <p className="font-bold mb-1">키보드 단축키</p>
           <p className="text-muted-foreground">
-            1: PDF · 3: 분석 시작 · 0: 안내 · Backspace: 뒤로
+            {pdf ? "2: 분석 시작 · Backspace: 뒤로" : "1: PDF 선택 · Backspace: 뒤로"}
           </p>
-
         </div>
+
 
         <UploadCard
           label="PDF 강의 자료 (단축키 1)"
@@ -127,8 +129,9 @@ function Upload() {
           inputRef={pdfRef}
           onPick={(f) => {
             setPdf({ file: f, name: f.name, size: f.size });
-            speak(`PDF 파일 ${f.name} 이 업로드되었습니다.`);
+            speak(`PDF 파일 ${f.name} 이 업로드되었습니다. 분석을 시작하려면 2번을 누르세요.`);
           }}
+
         />
 
 
@@ -145,10 +148,11 @@ function Upload() {
           <BigButton
             onClick={start}
             disabled={!pdf || sending}
-            aria-label="분석 시작 (단축키 3)"
+            aria-label="분석 시작 (단축키 2)"
             className="disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {sending ? "전송 중..." : "분석 시작 (단축키 3)"}
+            {sending ? "전송 중..." : "분석 시작 (단축키 2)"}
+
           </BigButton>
           <p className="text-center text-base text-muted-foreground mt-3">
             {sending
