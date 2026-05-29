@@ -57,8 +57,6 @@ function buildDisplay(data: {
   }
   return { display: data.direct_text ?? "" };
 }
-
-
 export async function sendToWebhook(input: {
   file: File;
   question: string;
@@ -67,12 +65,35 @@ export async function sendToWebhook(input: {
 }): Promise<WebhookResult> {
   const file_base64 = await fileToBase64(input.file);
 
+  console.log("[webhook] file:", {
+    name: input.file.name,
+    size: input.file.size,
+    type: input.file.type,
+    base64Length: file_base64.length,
+    base64Preview: file_base64.slice(0, 80),
+    startsWithPdfMagic: file_base64.startsWith("JVBERi"), // "%PDF-" in base64
+  });
+
+  if (input.file.size === 0) {
+    throw new Error("선택된 PDF 파일이 비어 있습니다. 다른 파일을 선택해 주세요.");
+  }
+  if (!file_base64.startsWith("JVBERi")) {
+    throw new Error(
+      "유효한 PDF 파일이 아닙니다. (PDF 매직 넘버 없음) 파일을 다시 확인해 주세요.",
+    );
+  }
+
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       file_base64,
       mode: input.mode,
+      user_question: input.question,
+      history: input.history ?? [],
+    }),
+  });
+
       user_question: input.question,
       history: input.history ?? [],
     }),
