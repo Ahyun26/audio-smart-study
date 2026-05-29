@@ -34,7 +34,10 @@ function stripCodeFence(s: string): string {
     .replace(/^\s*```(?:json)?\s*/i, "")
     .replace(/```\s*$/, "")
     .trim();
+}
+
 function buildDisplay(data: {
+
   mode: WebhookMode;
   summary_text?: string;
   direct_text?: string;
