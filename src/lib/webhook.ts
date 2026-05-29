@@ -154,22 +154,47 @@ export async function sendAnalysis(input: { file: File }): Promise<{
   ]);
 
   // ----- ReadAll: PDF 원문 텍스트만 -----
+  // 응답에서 가장 긴 평문(JSON 아닌) 문자열을 찾는 폴백
+  const longestPlainString = (d: Record<string, unknown>): string => {
+    let best = "";
+    const walk = (v: unknown) => {
+      if (typeof v === "string") {
+        const trimmed = v.trim();
+        if (trimmed.length < 80) return; // 너무 짧으면 무시
+        if (parseMaybeJSON(trimmed)) return; // JSON 문자열은 제외
+        if (trimmed.length > best.length) best = trimmed;
+      } else if (Array.isArray(v)) {
+        v.forEach(walk);
+      } else if (v && typeof v === "object") {
+        Object.values(v as Record<string, unknown>).forEach(walk);
+      }
+    };
+    walk(d);
+    return best;
+  };
   const extractReadAll = (d: Record<string, unknown>): string => {
-    let t =
+    const t =
       pickString(d.readall) ||
       pickString(d.read_all) ||
       pickString(d.full_text) ||
       pickString(d.direct_text) ||
       pickString(d.text) ||
-      pickString(d.content);
-    if (!t) {
-      const st = pickString(d.summary_text);
-      const parsed = parseMaybeJSON(st);
-      if (st && !parsed) t = st; // JSON이 아닌 평문이면 본문으로 간주
-    }
-    return t;
+      pickString(d.content) ||
+      pickString(d.body) ||
+      pickString(d.output);
+    if (t) return t;
+    const st = pickString(d.summary_text);
+    if (st && !parseMaybeJSON(st)) return st;
+    return longestPlainString(d);
   };
   const readall = extractReadAll(readData) || extractReadAll(sumData);
+  // 디버깅: 응답 구조 확인용
+  if (typeof window !== "undefined") {
+    console.log("[sendAnalysis] readData keys:", Object.keys(readData));
+    console.log("[sendAnalysis] sumData keys:", Object.keys(sumData));
+    if (!readall) console.warn("[sendAnalysis] readall 비어있음. 응답:", readData);
+  }
+
 
   // ----- Summary: 구조화된 핵심 요약 -----
   const extractSummary = (d: Record<string, unknown>): string => {
