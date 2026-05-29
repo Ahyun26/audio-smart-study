@@ -132,7 +132,8 @@ function parseMaybeJSON(s: string): unknown {
 }
 
 /**
- * 초기 분석: 전체 읽기 + 요약을 한 번에 요청.
+ * 초기 분석: 전체 읽기 + 요약을 병렬로 요청.
+ * n8n webhook은 두 모드 모두 { answer: string } 형태로 응답한다고 가정.
  */
 export async function sendAnalysis(input: { file: File }): Promise<{
   result: AnalysisResult;
@@ -147,31 +148,25 @@ export async function sendAnalysis(input: { file: File }): Promise<{
     throw new Error("유효한 PDF 파일이 아닙니다.");
   }
 
-  // read_all(전체 본문)과 summary(구조화 요약)를 병렬로 요청
-  const readRequest = (async () => {
-    if (typeof window !== "undefined") {
-      console.log("readall 요청 시작");
-    }
-    const readallRes = await postWebhook({ file_base64, mode: "read_all" });
-    if (typeof window !== "undefined") {
-      console.log("readall 응답:", readallRes);
-    }
-    return readallRes;
-  })();
-  const [readData, sumData] = await Promise.all([
-    readRequest,
+  console.log("readall 요청 시작");
+  console.log("summary 요청 시작");
+
+  const [readallRes, summaryRes] = await Promise.all([
+    postWebhook({ file_base64, mode: "read_all" }),
     postWebhook({ file_base64, mode: "summary" }),
   ]);
 
-  // ----- ReadAll: PDF 원문 텍스트만 -----
-  // 응답에서 가장 긴 평문(JSON 아닌) 문자열을 찾는 폴백
+  console.log("readall 응답:", readallRes);
+  console.log("summary 응답:", summaryRes);
+
+  // ----- ReadAll 추출 -----
   const longestPlainString = (d: Record<string, unknown>): string => {
     let best = "";
     const walk = (v: unknown) => {
       if (typeof v === "string") {
         const trimmed = v.trim();
-        if (trimmed.length < 80) return; // 너무 짧으면 무시
-        if (parseMaybeJSON(trimmed)) return; // JSON 문자열은 제외
+        if (trimmed.length < 80) return;
+        if (parseMaybeJSON(trimmed)) return;
         if (trimmed.length > best.length) best = trimmed;
       } else if (Array.isArray(v)) {
         v.forEach(walk);
@@ -184,6 +179,7 @@ export async function sendAnalysis(input: { file: File }): Promise<{
   };
   const extractReadAll = (d: Record<string, unknown>): string => {
     const t =
+      pickString(d.answer) ||
       pickString(d.readall) ||
       pickString(d.read_all) ||
       pickString(d.full_text) ||
@@ -192,21 +188,12 @@ export async function sendAnalysis(input: { file: File }): Promise<{
       pickString(d.content) ||
       pickString(d.body) ||
       pickString(d.output);
+    if (t && !parseMaybeJSON(t)) return t;
     if (t) return t;
-    const st = pickString(d.summary_text);
-    if (st && !parseMaybeJSON(st)) return st;
     return longestPlainString(d);
   };
-  const readall = extractReadAll(readData) || extractReadAll(sumData);
-  // 디버깅: 응답 구조 확인용
-  if (typeof window !== "undefined") {
-    console.log("[sendAnalysis] readData keys:", Object.keys(readData));
-    console.log("[sendAnalysis] sumData keys:", Object.keys(sumData));
-    if (!readall) console.warn("[sendAnalysis] readall 비어있음. 응답:", readData);
-  }
 
-
-  // ----- Summary: 구조화된 핵심 요약 -----
+  // ----- Summary 추출 -----
   const extractSummary = (d: Record<string, unknown>): string => {
     if (
       typeof d.subject === "string" ||
@@ -217,7 +204,11 @@ export async function sendAnalysis(input: { file: File }): Promise<{
       const s = buildSummaryText(d);
       if (s) return s;
     }
-    const candidates = [pickString(d.summary), pickString(d.summary_text)];
+    const candidates = [
+      pickString(d.answer),
+      pickString(d.summary),
+      pickString(d.summary_text),
+    ];
     for (const c of candidates) {
       const parsed = parseMaybeJSON(c);
       if (parsed && typeof parsed === "object") {
@@ -228,20 +219,31 @@ export async function sendAnalysis(input: { file: File }): Promise<{
     }
     return "";
   };
-  const summary = extractSummary(sumData) || extractSummary(readData);
+
+  const readall = extractReadAll(readallRes);
+  const summary = extractSummary(summaryRes);
+
+  console.log("readall 세팅:", readall);
+  console.log("summary 세팅:", summary);
 
   const qa_ready =
-    typeof sumData.qa_ready === "boolean"
-      ? sumData.qa_ready
-      : typeof readData.qa_ready === "boolean"
-        ? readData.qa_ready
+    typeof summaryRes.qa_ready === "boolean"
+      ? summaryRes.qa_ready
+      : typeof readallRes.qa_ready === "boolean"
+        ? readallRes.qa_ready
         : true;
 
   return {
-    result: { readall, summary, qa_ready, raw: { read: readData, summary: sumData } },
+    result: {
+      readall,
+      summary,
+      qa_ready,
+      raw: { read: readallRes, summary: summaryRes },
+    },
     file_base64,
   };
 }
+
 
 /**
  * QA: 저장된 file_base64를 사용해 질문을 전송하고 답변 텍스트를 반환.
