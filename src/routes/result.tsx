@@ -14,6 +14,12 @@ export const Route = createFileRoute("/result")({
 
 type AnalysisMeta = {
   pdfName?: string | null;
+  audioName?: string | null;
+  question?: string;
+  mode?: "summary" | "read_all" | "qa";
+  uploadedAt?: string;
+};
+
 function stripCodeFence(s: string): string {
   return s
     .replace(/^\s*```(?:json)?\s*/i, "")
@@ -47,7 +53,6 @@ function loadAnswer(): { text: string; parsed: unknown } {
         direct_text?: unknown;
         answer?: unknown;
       };
-      // summary_text 안의 JSON 문자열을 우선 파싱
       if (typeof d.summary_text === "string" && d.summary_text) {
         const parsed = d.parsed ?? tryParseJson(d.summary_text);
         const text =
@@ -70,12 +75,6 @@ function loadAnswer(): { text: string; parsed: unknown } {
   }
 }
 
-    }
-    return raw;
-  } catch {
-    return "";
-  }
-}
 
 
 function loadMeta(): AnalysisMeta {
