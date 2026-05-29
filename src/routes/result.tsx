@@ -51,11 +51,6 @@ function loadMeta(): AnalysisMeta {
 
 function Result() {
   const navigate = useNavigate();
-  const answer = useMemo(loadAnswer, []);
-  const meta = useMemo(loadMeta, []);
-  const [playing, setPlaying] = useState(false);
-function Result() {
-  const navigate = useNavigate();
   const [answer, setAnswer] = useState("");
   const [meta, setMeta] = useState<AnalysisMeta>({});
   const [playing, setPlaying] = useState(false);
