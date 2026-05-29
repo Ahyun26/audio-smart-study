@@ -63,7 +63,7 @@ function Home() {
             navigate({ to: "/upload" });
           }}
           className="max-w-md py-12 text-3xl"
-          description="PDF · 녹음 파일"
+          description="단축키 1 · PDF · 녹음 파일"
         >
           파일 업로드
         </BigButton>
@@ -72,15 +72,16 @@ function Home() {
           className="text-center text-lg text-muted-foreground max-w-md"
           aria-hidden
         >
-          강의 자료를 업로드하면 AI가 핵심 내용을 분석하여 음성으로 안내합니다.
+          숫자 1번을 누르면 파일 업로드, 숫자 2번을 누르면 최근 문서가 열립니다.
         </p>
       </section>
 
       <footer className="px-6 pb-10 pt-4">
         <BigButton
           variant="secondary"
-          aria-label="최근 문서 열기"
+          aria-label="최근 문서 열기. 단축키 2."
           onClick={() => {
+
             speak("최근 문서 목록을 엽니다.");
             navigate({ to: "/recent" });
           }}
