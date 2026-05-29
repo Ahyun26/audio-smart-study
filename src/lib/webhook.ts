@@ -148,16 +148,23 @@ export async function sendAnalysis(input: { file: File }): Promise<{
     throw new Error("유효한 PDF 파일이 아닙니다.");
   }
 
-  console.log("readall 요청 시작");
-  console.log("summary 요청 시작");
+  // ReadAll: 클라이언트에서 PDF 텍스트 직접 추출
+  let clientReadall = "";
+  try {
+    const { extractPdfTextFromFile } = await import("./pdfText");
+    clientReadall = await extractPdfTextFromFile(input.file);
+    console.log("클라이언트 PDF 추출 길이:", clientReadall.length);
+  } catch (e) {
+    console.warn("클라이언트 PDF 추출 실패:", e);
+  }
 
-  const READALL_INSTRUCTION =
-    '아래 문서 전체를 처음부터 끝까지 읽어줘. 마크다운 기호(#, *, **, --, |, >, [, ])는 모두 제거. 너는 문서 내용을 읽어주는 도구야. 인사 금지. 질문 금지. 안내 멘트 금지. 받은 문서 내용만 바로 출력해.';
+  // Summary는 webhook 호출. ReadAll은 클라이언트 추출 실패 시에만 webhook 폴백.
+  const summaryPromise = postWebhook({ file_base64, mode: "summary" });
+  const readallPromise = clientReadall
+    ? Promise.resolve<Record<string, unknown>>({ answer: clientReadall })
+    : postWebhook({ file_base64, mode: "readall" });
 
-  const [readallRes, summaryRes] = await Promise.all([
-    postWebhook({ file_base64, mode: "readall", user_question: READALL_INSTRUCTION }),
-    postWebhook({ file_base64, mode: "summary" }),
-  ]);
+  const [readallRes, summaryRes] = await Promise.all([readallPromise, summaryPromise]);
 
   console.log("readall 응답:", readallRes);
   console.log("summary 응답:", summaryRes);
