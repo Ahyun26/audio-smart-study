@@ -156,8 +156,7 @@ export async function sendToWebhook(input: {
     return { display: text };
   }
 
-  const { display, parsed } = buildDisplay({
-
+  const { display, parsed, speech_text } = buildDisplay({
     mode: input.mode,
     summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
     direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
@@ -171,6 +170,7 @@ export async function sendToWebhook(input: {
     image_count: typeof data.image_count === "number" ? data.image_count : undefined,
     parsed,
     display,
+    speech_text,
   };
 }
 
