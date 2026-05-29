@@ -61,6 +61,15 @@ export function cleanForSpeech(input: string, mode: SpeechMode = "default"): str
     s = convertMarkdownTables(s);
   }
 
+  // summary: 이모지/머리표 제거 → 자연스러운 문장
+  if (mode === "summary") {
+    // 이모지(서로게이트/심볼) 제거
+    s = s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, " ");
+    // "라벨: 내용" → "라벨. 내용"
+    s = s.replace(/^([^\n:：]{1,20})[:：]\s*/gm, "$1. ");
+  }
+
+
   // 코드 펜스
   s = s.replace(/```[\s\S]*?```/g, " ");
   s = s.replace(/`([^`]+)`/g, "$1");
