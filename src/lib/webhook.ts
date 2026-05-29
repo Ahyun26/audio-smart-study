@@ -87,8 +87,52 @@ async function postWebhook(payload: {
 }
 
 /**
+ * 구조화된 핵심 요약 텍스트 생성 (subject/doc_type/key_concept/summary/table_explanation/keywords)
+ */
+function buildSummaryText(obj: Record<string, unknown>): string {
+  const get = (k: string) => {
+    const v = obj[k];
+    if (typeof v === "string") return v.trim();
+    if (Array.isArray(v)) return v.map((x) => String(x)).filter(Boolean).join(", ");
+    if (v && typeof v === "object") {
+      try {
+        return JSON.stringify(v);
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  };
+  const subject = get("subject");
+  const docType = get("doc_type");
+  const keyConcept = get("key_concept");
+  const summary = get("summary");
+  const tableExp = get("table_explanation");
+  const keywords = get("keywords");
+
+  const lines: string[] = [];
+  if (subject || docType) {
+    lines.push(`📘 주제: ${[subject, docType].filter(Boolean).join(" · ")}`);
+  }
+  if (keyConcept) lines.push(`\n🔑 핵심 개념\n${keyConcept}`);
+  if (summary) lines.push(`\n📝 요약\n${summary}`);
+  if (tableExp) lines.push(`\n📊 표 설명\n${tableExp}`);
+  if (keywords) lines.push(`\n🏷️ 키워드: ${keywords}`);
+  return lines.join("\n").trim();
+}
+
+function parseMaybeJSON(s: string): unknown {
+  if (!s) return null;
+  const clean = stripCodeFence(s);
+  try {
+    return JSON.parse(clean);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 초기 분석: 전체 읽기 + 요약을 한 번에 요청.
- * n8n 응답: { readall, summary, qa_ready }
  */
 export async function sendAnalysis(input: { file: File }): Promise<{
   result: AnalysisResult;
@@ -105,36 +149,52 @@ export async function sendAnalysis(input: { file: File }): Promise<{
 
   const data = await postWebhook({ file_base64, mode: "all" });
 
-  // readall / summary 추출 (응답 키 변형 허용)
-  const readallRaw =
+  // ----- ReadAll: 전체 본문 텍스트 -----
+  let readall =
     pickString(data.readall) ||
     pickString(data.read_all) ||
-    pickString(data.direct_text);
-  const summaryRaw =
-    pickString(data.summary) || pickString(data.summary_text);
+    pickString(data.full_text) ||
+    pickString(data.direct_text) ||
+    pickString(data.text);
 
-  // summary가 JSON 문자열인 경우 보기 좋게 변환
-  let summary = summaryRaw;
-  if (summary) {
-    const clean = stripCodeFence(summary);
-    try {
-      const parsed = JSON.parse(clean);
-      summary = typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2);
-    } catch {
-      summary = clean;
+  // summary_text가 JSON이 아닌 평문이면 readall로도 사용
+  if (!readall) {
+    const st = pickString(data.summary_text);
+    const parsed = parseMaybeJSON(st);
+    if (st && !parsed) readall = st;
+  }
+
+  // ----- Summary: 구조화된 핵심 요약 -----
+  let summary = "";
+  // 1) data 자체에 구조화 필드가 있는지
+  if (
+    typeof data.subject === "string" ||
+    typeof data.key_concept === "string" ||
+    typeof data.summary === "string" ||
+    typeof data.keywords !== "undefined"
+  ) {
+    summary = buildSummaryText(data);
+  }
+  // 2) summary_text/summary 필드 안에 JSON이 들어있는 경우
+  if (!summary) {
+    const candidates = [pickString(data.summary), pickString(data.summary_text)];
+    for (const c of candidates) {
+      const parsed = parseMaybeJSON(c);
+      if (parsed && typeof parsed === "object") {
+        summary = buildSummaryText(parsed as Record<string, unknown>);
+        if (summary) break;
+      }
+      if (!summary && c && !parsed) {
+        summary = c; // 평문 요약
+        break;
+      }
     }
   }
 
-  const qa_ready =
-    typeof data.qa_ready === "boolean" ? data.qa_ready : true;
+  const qa_ready = typeof data.qa_ready === "boolean" ? data.qa_ready : true;
 
   return {
-    result: {
-      readall: readallRaw,
-      summary,
-      qa_ready,
-      raw: data,
-    },
+    result: { readall, summary, qa_ready, raw: data },
     file_base64,
   };
 }
