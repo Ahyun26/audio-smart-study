@@ -106,7 +106,14 @@ export function cleanForSpeech(input: string, mode: SpeechMode = "default"): str
     s = s.replace(/\s+([.,!?])/g, "$1");
     s = s.replace(/\s{2,}/g, " ");
   }
+  // 숫자+번 → 한글 읽기 (예: "1번"→"일 번", "2번"→"이 번")
+  const digitToKor: Record<string, string> = {
+    "0": "영", "1": "일", "2": "이", "3": "삼", "4": "사",
+    "5": "오", "6": "육", "7": "칠", "8": "팔", "9": "구",
+  };
+  s = s.replace(/(\d)번/g, (_m, d: string) => `${digitToKor[d] ?? d} 번`);
   return s.trim();
+
 }
 
 export function speak(
