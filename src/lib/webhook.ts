@@ -147,54 +147,63 @@ export async function sendAnalysis(input: { file: File }): Promise<{
     throw new Error("유효한 PDF 파일이 아닙니다.");
   }
 
-  const data = await postWebhook({ file_base64, mode: "all" });
+  // read_all(전체 본문)과 summary(구조화 요약)를 병렬로 요청
+  const [readData, sumData] = await Promise.all([
+    postWebhook({ file_base64, mode: "read_all" }),
+    postWebhook({ file_base64, mode: "summary" }),
+  ]);
 
-  // ----- ReadAll: 전체 본문 텍스트 -----
-  let readall =
-    pickString(data.readall) ||
-    pickString(data.read_all) ||
-    pickString(data.full_text) ||
-    pickString(data.direct_text) ||
-    pickString(data.text);
-
-  // summary_text가 JSON이 아닌 평문이면 readall로도 사용
-  if (!readall) {
-    const st = pickString(data.summary_text);
-    const parsed = parseMaybeJSON(st);
-    if (st && !parsed) readall = st;
-  }
+  // ----- ReadAll: PDF 원문 텍스트만 -----
+  const extractReadAll = (d: Record<string, unknown>): string => {
+    let t =
+      pickString(d.readall) ||
+      pickString(d.read_all) ||
+      pickString(d.full_text) ||
+      pickString(d.direct_text) ||
+      pickString(d.text) ||
+      pickString(d.content);
+    if (!t) {
+      const st = pickString(d.summary_text);
+      const parsed = parseMaybeJSON(st);
+      if (st && !parsed) t = st; // JSON이 아닌 평문이면 본문으로 간주
+    }
+    return t;
+  };
+  const readall = extractReadAll(readData) || extractReadAll(sumData);
 
   // ----- Summary: 구조화된 핵심 요약 -----
-  let summary = "";
-  // 1) data 자체에 구조화 필드가 있는지
-  if (
-    typeof data.subject === "string" ||
-    typeof data.key_concept === "string" ||
-    typeof data.summary === "string" ||
-    typeof data.keywords !== "undefined"
-  ) {
-    summary = buildSummaryText(data);
-  }
-  // 2) summary_text/summary 필드 안에 JSON이 들어있는 경우
-  if (!summary) {
-    const candidates = [pickString(data.summary), pickString(data.summary_text)];
+  const extractSummary = (d: Record<string, unknown>): string => {
+    if (
+      typeof d.subject === "string" ||
+      typeof d.key_concept === "string" ||
+      typeof d.summary === "string" ||
+      typeof d.keywords !== "undefined"
+    ) {
+      const s = buildSummaryText(d);
+      if (s) return s;
+    }
+    const candidates = [pickString(d.summary), pickString(d.summary_text)];
     for (const c of candidates) {
       const parsed = parseMaybeJSON(c);
       if (parsed && typeof parsed === "object") {
-        summary = buildSummaryText(parsed as Record<string, unknown>);
-        if (summary) break;
+        const s = buildSummaryText(parsed as Record<string, unknown>);
+        if (s) return s;
       }
-      if (!summary && c && !parsed) {
-        summary = c; // 평문 요약
-        break;
-      }
+      if (c && !parsed) return c;
     }
-  }
+    return "";
+  };
+  const summary = extractSummary(sumData) || extractSummary(readData);
 
-  const qa_ready = typeof data.qa_ready === "boolean" ? data.qa_ready : true;
+  const qa_ready =
+    typeof sumData.qa_ready === "boolean"
+      ? sumData.qa_ready
+      : typeof readData.qa_ready === "boolean"
+        ? readData.qa_ready
+        : true;
 
   return {
-    result: { readall, summary, qa_ready, raw: data },
+    result: { readall, summary, qa_ready, raw: { read: readData, summary: sumData } },
     file_base64,
   };
 }
