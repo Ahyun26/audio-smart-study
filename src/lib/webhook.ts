@@ -104,7 +104,7 @@ export async function sendToWebhook(input: {
   }
 
   const { display, parsed } = buildDisplay({
-  const { display, parsed } = buildDisplay({
+
     mode: input.mode,
     summary_text: typeof data.summary_text === "string" ? data.summary_text : undefined,
     direct_text: typeof data.direct_text === "string" ? data.direct_text : undefined,
