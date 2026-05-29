@@ -68,7 +68,9 @@ function Result() {
 
   useEffect(() => {
     const r = loadResult();
-    setReadall(r.readall ?? "");
+    const data = r.readall ?? "";
+    console.log("readall 세팅:", data);
+    setReadall(data);
     setSummary(r.summary ?? "");
     setQaReady(!!r.qa_ready);
     setMeta(loadMeta());
