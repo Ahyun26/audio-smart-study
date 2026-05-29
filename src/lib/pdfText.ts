@@ -1,7 +1,6 @@
 // 클라이언트에서 PDF 텍스트를 추출 (pdfjs-dist 사용)
 import * as pdfjsLib from "pdfjs-dist";
 // Vite worker import
-// @ts-expect-error - vite ?url
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 if (typeof window !== "undefined") {
