@@ -249,7 +249,7 @@ function Result() {
     <AppShell title={page === "menu" ? "AI 학습 메뉴" : "AI 학습 노트"} back={{ to: "/" }}>
       <VoiceAnnouncer message={announcement} />
 
-      <div className={`flex-1 flex flex-col gap-6 max-w-2xl mx-auto w-full pb-10 ${page === "detail" && section === "readall" && content ? "pb-32" : ""}`}>
+      <div className={`flex-1 flex flex-col gap-6 max-w-2xl mx-auto w-full pb-10 ${page === "detail" && (section === "readall" || section === "summary") && content ? "pb-32" : ""}`}>
         {page === "menu" ? (
           <>
             <section
