@@ -254,6 +254,62 @@ export async function sendAnalysis(input: { file: File }): Promise<{
   };
 }
 
+/**
+ * 단일 섹션(readall 또는 summary) 텍스트를 그때그때 가져온다.
+ * readall은 클라이언트 PDF 추출을 우선 시도한다.
+ */
+export async function fetchSection(input: {
+  file_base64: string;
+  mode: "readall" | "summary";
+}): Promise<string> {
+  if (input.mode === "readall") {
+    try {
+      const { extractPdfTextFromBase64 } = await import("./pdfText");
+      const text = await extractPdfTextFromBase64(input.file_base64);
+      if (text && text.trim().length > 0) return text;
+    } catch (e) {
+      console.warn("클라이언트 PDF 추출 실패, webhook 폴백:", e);
+    }
+  }
+
+  const data = await postWebhook({
+    file_base64: input.file_base64,
+    mode: input.mode,
+  });
+
+  if (input.mode === "summary") {
+    if (
+      typeof data.subject === "string" ||
+      typeof data.key_concept === "string" ||
+      typeof data.summary === "string" ||
+      typeof data.keywords !== "undefined"
+    ) {
+      const s = buildSummaryText(data);
+      if (s) return s;
+    }
+    const c = pickString(data.answer) || pickString(data.summary) || pickString(data.summary_text);
+    const parsed = parseMaybeJSON(c);
+    if (parsed && typeof parsed === "object") {
+      const s = buildSummaryText(parsed as Record<string, unknown>);
+      if (s) return s;
+    }
+    return c;
+  }
+
+  // readall webhook 응답
+  return (
+    pickString(data.answer) ||
+    pickString(data.readall) ||
+    pickString(data.read_all) ||
+    pickString(data.full_text) ||
+    pickString(data.text) ||
+    pickString(data.content) ||
+    ""
+  );
+}
+
+
+
 
 /**
  * QA: 저장된 file_base64를 사용해 질문을 전송하고 답변 텍스트를 반환.

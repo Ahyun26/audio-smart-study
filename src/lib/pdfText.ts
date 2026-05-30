@@ -36,9 +36,8 @@ function stripMarkdown(s: string): string {
     .trim();
 }
 
-export async function extractPdfTextFromFile(file: File): Promise<string> {
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+async function extractFromData(data: ArrayBuffer | Uint8Array): Promise<string> {
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
   const parts: string[] = [];
   for (let p = 1; p <= pdf.numPages; p++) {
     const page = await pdf.getPage(p);
@@ -49,4 +48,16 @@ export async function extractPdfTextFromFile(file: File): Promise<string> {
     if (pageText.trim()) parts.push(pageText);
   }
   return stripMarkdown(parts.join("\n\n"));
+}
+
+export async function extractPdfTextFromFile(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  return extractFromData(buf);
+}
+
+export async function extractPdfTextFromBase64(b64: string): Promise<string> {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return extractFromData(bytes);
 }
