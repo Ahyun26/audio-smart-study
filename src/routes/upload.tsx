@@ -151,14 +151,14 @@ function Upload() {
             aria-label="분석 시작 (단축키 2)"
             className="disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {sending ? "전송 중..." : "분석 시작 (단축키 2)"}
+            {sending ? "준비 중..." : "분석 메뉴 열기 (단축키 2)"}
 
           </BigButton>
           <p className="text-center text-base text-muted-foreground mt-3">
             {sending
-              ? "n8n으로 전송 중입니다..."
+              ? "파일을 준비하고 있습니다..."
               : pdf
-                ? "분석을 시작하세요. 전체 읽기 · 요약 · 질문을 한 번에 준비합니다."
+                ? "다음 화면에서 전체 읽기 · 요약 · 질문을 메뉴로 선택할 수 있습니다."
                 : "PDF 파일을 업로드해 주세요."}
           </p>
         </div>
