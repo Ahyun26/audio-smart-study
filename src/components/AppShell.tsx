@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { speak } from "@/lib/speak";
+import { speak, adjustSpeechRate, SPEECH_RATE_STEP, SPEECH_RATE_MIN, SPEECH_RATE_MAX, getSpeechRate } from "@/lib/speak";
+import { SpeedBadge } from "@/components/SpeedBadge";
 
 interface AppShellProps {
   title: string;
@@ -12,11 +13,28 @@ export function AppShell({ title, children, back }: AppShellProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!back) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "ArrowLeft") return;
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.isContentEditable)) return;
+      const isInput = !!(t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.isContentEditable));
+
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (isInput) return;
+        e.preventDefault();
+        const current = getSpeechRate();
+        const delta = e.key === "ArrowUp" ? SPEECH_RATE_STEP : -SPEECH_RATE_STEP;
+        const next = adjustSpeechRate(delta);
+        if (next === current) {
+          const limit = e.key === "ArrowUp" ? SPEECH_RATE_MAX : SPEECH_RATE_MIN;
+          speak(`최${e.key === "ArrowUp" ? "대" : "소"} ${limit.toFixed(1)}배속입니다.`, { interrupt: true, rate: next });
+        } else {
+          speak(`${next.toFixed(1)}배속으로 변경되었습니다.`, { interrupt: true, rate: next });
+        }
+        return;
+      }
+
+      if (!back) return;
+      if (e.key !== "ArrowLeft") return;
+      if (isInput) return;
       e.preventDefault();
       speak("이전 화면으로 이동합니다.");
       navigate({ to: back.to });
@@ -39,7 +57,8 @@ export function AppShell({ title, children, back }: AppShellProps) {
         ) : (
           <div className="w-14" aria-hidden />
         )}
-        <h1 className="text-2xl font-bold flex-1 text-center pr-14">{title}</h1>
+        <h1 className="text-2xl font-bold flex-1 text-center">{title}</h1>
+        <SpeedBadge />
       </header>
       <div className="flex-1 px-6 pb-10 flex flex-col">{children}</div>
     </main>
