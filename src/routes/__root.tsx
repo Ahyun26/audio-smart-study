@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "pairing" },
+      { name: "description", content: "AI Study Buddy is an AI-powered app that summarizes and reads study materials for visually impaired users." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "pairing" },
+      { property: "og:description", content: "AI Study Buddy is an AI-powered app that summarizes and reads study materials for visually impaired users." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "pairing" },
+      { name: "twitter:description", content: "AI Study Buddy is an AI-powered app that summarizes and reads study materials for visually impaired users." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4a156e6a-7716-4888-b396-bd27cd108830/id-preview-a7a70283--ae564209-a4af-4095-9d42-b221fb869a57.lovable.app-1780156007529.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4a156e6a-7716-4888-b396-bd27cd108830/id-preview-a7a70283--ae564209-a4af-4095-9d42-b221fb869a57.lovable.app-1780156007529.png" },
     ],
     links: [
       {
