@@ -210,7 +210,7 @@ function Result() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [page, fileB64]);
+  }, [page, fileB64, section, content, playState]);
 
   const uploadedAt = meta.uploadedAt
     ? new Date(meta.uploadedAt).toLocaleString("ko-KR")
