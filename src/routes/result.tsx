@@ -45,7 +45,7 @@ function Result() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const [playState, setPlayState] = useState<"idle" | "playing" | "paused">("idle");
 
   const [question, setQuestion] = useState("");
   const [qaAnswer, setQaAnswer] = useState("");
