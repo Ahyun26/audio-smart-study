@@ -46,16 +46,12 @@ function Home() {
     <main className="min-h-dvh bg-background text-foreground flex flex-col">
       <VoiceAnnouncer message={announcement} />
 
-      <header className="px-6 pt-10 pb-6">
-        <p className="text-base font-semibold tracking-wide uppercase text-muted-foreground">
-          AI 학습 도우미
-        </p>
-        <h1 className="mt-2 text-4xl font-bold leading-tight">
-          오늘은 무엇을<br />학습할까요?
+      <section className="flex-1 px-6 flex flex-col items-center justify-center gap-10 text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
+          AI 학습도우미<br />
+          <span className="text-muted-foreground">오늘은 무엇을 학습할까요?</span>
         </h1>
-      </header>
 
-      <section className="flex-1 px-6 flex flex-col items-center justify-center gap-6">
         <BigButton
           aria-label="파일 업로드. 두 번 탭하여 PDF 또는 녹음 파일을 업로드합니다."
           onClick={() => {
@@ -69,7 +65,7 @@ function Home() {
         </BigButton>
 
         <p
-          className="text-center text-lg text-muted-foreground max-w-md"
+          className="text-lg text-muted-foreground max-w-md"
           aria-hidden
         >
           숫자 1번을 누르면 파일 업로드, 숫자 2번을 누르면 최근 문서가 열립니다.
@@ -81,7 +77,6 @@ function Home() {
           variant="secondary"
           aria-label="최근 문서 열기. 단축키 2."
           onClick={() => {
-
             speak("최근 문서 목록을 엽니다.");
             navigate({ to: "/recent" });
           }}
