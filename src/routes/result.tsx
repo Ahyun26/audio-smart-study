@@ -172,14 +172,20 @@ function Result() {
     }
     setQaError(null);
     setQaLoading(true);
-    speak("질문을 전송합니다.");
+    speak("질문을 전송합니다. 분석 중입니다. 잠시만 기다려주세요.");
+    const waitTimer = window.setInterval(() => {
+      speak("분석 중입니다. 잠시만 기다려주세요.");
+    }, 5000);
     try {
       const answer = await askQuestion({ file_base64: fileB64, question: q });
-      setQaAnswer(answer);
+      window.clearInterval(waitTimer);
       stopSpeaking();
+      setQaAnswer(answer);
       setPlayState("playing");
       speak(answer, { interrupt: true, mode: "summary" });
     } catch (e) {
+      window.clearInterval(waitTimer);
+      stopSpeaking();
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
       setQaError(`질문 전송 실패: ${msg}`);
       speak("질문 전송에 실패했습니다.");
