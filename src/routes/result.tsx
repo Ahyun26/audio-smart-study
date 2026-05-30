@@ -123,7 +123,19 @@ function Result() {
         return;
       }
       setContent(text);
-      await playText(text, sec);
+      if (sec === "readall") {
+        stopSpeaking();
+        setPlayState("playing");
+        speak(
+          "전체 읽기를 시작합니다. 7번을 누르면 일시정지되고, 다시 7번을 누르면 이어서 들을 수 있습니다. 8번을 누르면 처음부터 다시 읽습니다.",
+          { interrupt: true, raw: true },
+        );
+        setTimeout(() => {
+          playText(text, sec);
+        }, 9000);
+      } else {
+        await playText(text, sec);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
       setError(msg);
