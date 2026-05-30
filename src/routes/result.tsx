@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
-import { speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/lib/speak";
+import { speak, stopSpeaking, pauseSpeaking, resumeSpeaking, getSpeechRate } from "@/lib/speak";
 import { expandImagesForSpeech, hasImageMarkdown } from "@/lib/imageDescribe";
 import { askQuestion, fetchSection } from "@/lib/webhook";
 
@@ -139,7 +139,7 @@ function Result() {
           }
           const u = new SpeechSynthesisUtterance(messages[idx]);
           u.lang = "ko-KR";
-          u.rate = 1;
+          u.rate = getSpeechRate();
           u.pitch = 1;
           u.onend = () => speakSequentially(idx + 1);
           synth.speak(u);
