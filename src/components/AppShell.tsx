@@ -6,13 +6,17 @@ import { SpeedBadge } from "@/components/SpeedBadge";
 interface AppShellProps {
   title: string;
   children: ReactNode;
-  back?: { to?: string; label?: string };
+  back?: { to?: string; label?: string; onBack?: () => void };
 }
 
 export function AppShell({ title, children, back }: AppShellProps) {
   const router = useRouter();
 
   const goBack = () => {
+    if (back?.onBack) {
+      back.onBack();
+      return;
+    }
     speak("이전 화면으로 이동합니다.");
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.history.back();
