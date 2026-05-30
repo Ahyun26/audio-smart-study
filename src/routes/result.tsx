@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
@@ -309,9 +311,32 @@ function Result() {
                   </p>
                 )}
                 {content && (
-                  <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
-                    {content}
-                  </p>
+                  section === "readall" ? (
+                    <div className="text-lg leading-relaxed break-words space-y-4
+                      [&_h1]:text-3xl [&_h1]:font-extrabold [&_h1]:mt-6 [&_h1]:mb-2
+                      [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2
+                      [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-2
+                      [&_p]:my-2
+                      [&_strong]:font-bold
+                      [&_em]:italic
+                      [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-2
+                      [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-2
+                      [&_li]:my-1
+                      [&_a]:text-primary [&_a]:underline
+                      [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-base
+                      [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-xl [&_pre]:overflow-x-auto
+                      [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground
+                      [&_table]:w-full [&_table]:border-collapse [&_table]:my-3
+                      [&_th]:border-2 [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:font-bold [&_th]:bg-muted [&_th]:text-left
+                      [&_td]:border-2 [&_td]:border-border [&_td]:px-3 [&_td]:py-2
+                      [&_hr]:my-4 [&_hr]:border-border">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
+                      {content}
+                    </p>
+                  )
                 )}
               </>
             )}
