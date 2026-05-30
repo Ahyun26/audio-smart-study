@@ -190,11 +190,27 @@ function Result() {
           e.preventDefault();
           openSection("qa");
         }
+      } else if (page === "detail" && (section === "readall" || section === "summary") && content) {
+        if (e.key === "7") {
+          e.preventDefault();
+          if (playState === "playing") {
+            pauseSpeaking();
+            setPlayState("paused");
+          } else if (playState === "paused") {
+            resumeSpeaking();
+            setPlayState("playing");
+          } else {
+            playText(content, section);
+          }
+        } else if (e.key === "8") {
+          e.preventDefault();
+          playText(content, section);
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [page, fileB64]);
+  }, [page, fileB64, section, content, playState]);
 
   const uploadedAt = meta.uploadedAt
     ? new Date(meta.uploadedAt).toLocaleString("ko-KR")
@@ -277,7 +293,7 @@ function Result() {
                 )}
                 {content && (
                   <>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-3 flex-wrap justify-center items-center">
                       <BigButton
                         variant={playState === "playing" ? "secondary" : "primary"}
                         onClick={() => {
@@ -291,20 +307,21 @@ function Result() {
                             playText(content, section);
                           }
                         }}
-                        className="max-w-[10rem]"
+                        className="max-w-[12rem]"
                       >
-                        {playState === "playing" ? "일시정지" : playState === "paused" ? "이어 듣기" : "다시 듣기"}
+                        {playState === "playing" ? "일시정지 (7)" : playState === "paused" ? "이어 듣기 (7)" : "다시 듣기 (7)"}
                       </BigButton>
                       {playState !== "idle" && (
                         <BigButton
                           variant="secondary"
                           onClick={() => {
-                            stopSpeaking();
-                            setPlayState("idle");
+                            if (section === "readall" || section === "summary") {
+                              playText(content, section);
+                            }
                           }}
-                          className="max-w-[10rem]"
+                          className="max-w-[12rem]"
                         >
-                          처음부터
+                          처음부터 (8)
                         </BigButton>
                       )}
                     </div>
