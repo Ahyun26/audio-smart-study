@@ -204,8 +204,9 @@ function Result() {
         if (page === "menu") {
           e.preventDefault();
           e.stopPropagation();
+          if (typeof window !== "undefined") window.speechSynthesis.cancel();
           stopSpeaking();
-          navigate({ to: "/" });
+          navigate({ to: "/upload" });
           return;
         }
       }
