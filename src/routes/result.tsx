@@ -126,13 +126,25 @@ function Result() {
       if (sec === "readall") {
         stopSpeaking();
         setPlayState("playing");
-        speak(
-          "전체 읽기를 시작합니다. 칠 번을 누르면 일시정지되고, 다시 칠 번을 누르면 이어서 들을 수 있습니다. 팔 번을 누르면 처음부터 다시 들을 수 있습니다. 이전 화살표를 누르면 메뉴 선택을 다시 할 수 있습니다.",
-          { interrupt: true, raw: true },
-        );
-        setTimeout(() => {
-          playText(text, sec);
-        }, 9000);
+        const synth = window.speechSynthesis;
+        const messages = [
+          "7번을 누르면 일시정지 또는 이어듣기입니다.",
+          "8번을 누르면 처음부터 다시 들을 수 있습니다.",
+          "왼쪽 방향키를 누르면 메뉴로 돌아갑니다.",
+        ];
+        const speakSequentially = (idx: number) => {
+          if (idx >= messages.length) {
+            playText(text, sec);
+            return;
+          }
+          const u = new SpeechSynthesisUtterance(messages[idx]);
+          u.lang = "ko-KR";
+          u.rate = 1;
+          u.pitch = 1;
+          u.onend = () => speakSequentially(idx + 1);
+          synth.speak(u);
+        };
+        speakSequentially(0);
       } else {
         await playText(text, sec);
       }
