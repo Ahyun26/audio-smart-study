@@ -278,22 +278,12 @@ export async function fetchSection(input: {
   });
 
   if (input.mode === "summary") {
-    if (
-      typeof data.subject === "string" ||
-      typeof data.key_concept === "string" ||
-      typeof data.summary === "string" ||
-      typeof data.keywords !== "undefined"
-    ) {
-      const s = buildSummaryText(data);
-      if (s) return s;
-    }
-    const c = pickString(data.answer) || pickString(data.summary) || pickString(data.summary_text);
-    const parsed = parseMaybeJSON(c);
-    if (parsed && typeof parsed === "object") {
-      const s = buildSummaryText(parsed as Record<string, unknown>);
-      if (s) return s;
-    }
-    return c;
+    return (
+      pickString(data.answer) ||
+      pickString(data.summary) ||
+      pickString(data.summary_text) ||
+      ""
+    );
   }
 
   // readall webhook 응답
