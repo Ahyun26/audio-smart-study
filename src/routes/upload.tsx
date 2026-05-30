@@ -5,6 +5,7 @@ import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak } from "@/lib/speak";
 import { fileToBase64 } from "@/lib/webhook";
+import { saveRecentDoc } from "@/lib/recentDocs";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
