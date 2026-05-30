@@ -73,8 +73,12 @@ function Upload() {
     }
     setError(null);
     setSending(true);
-    speak("문서를 분석 중입니다. 잠시만 기다려 주세요.");
+    speak("문서를 준비하고 있습니다.");
     try {
+      const file_base64 = await fileToBase64(pdf.file);
+      if (!file_base64.startsWith("JVBERi")) {
+        throw new Error("유효한 PDF 파일이 아닙니다.");
+      }
       sessionStorage.setItem(
         "analysis_meta",
         JSON.stringify({
@@ -82,19 +86,15 @@ function Upload() {
           uploadedAt: new Date().toISOString(),
         }),
       );
-      const { result, file_base64 } = await sendAnalysis({ file: pdf.file });
-      sessionStorage.setItem("analysis_result", JSON.stringify(result));
-      try {
-        sessionStorage.setItem("analysis_file_base64", file_base64);
-      } catch {
-        // 용량 초과 등은 무시 (QA 비활성화)
-      }
-      speak("분석이 완료되었습니다.");
+      sessionStorage.setItem("analysis_file_base64", file_base64);
+      // 결과 화면은 메뉴에서 선택할 때 그때그때 불러온다.
+      sessionStorage.removeItem("analysis_result");
+      speak("분석 메뉴 화면으로 이동합니다.");
       navigate({ to: "/result" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
-      setError(`분석 실패: ${msg}`);
-      speak("분석에 실패했습니다.");
+      setError(`준비 실패: ${msg}`);
+      speak("파일 준비에 실패했습니다.");
     } finally {
       setSending(false);
     }
