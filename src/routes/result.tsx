@@ -139,7 +139,7 @@ function Result() {
           }
           const u = new SpeechSynthesisUtterance(messages[idx]);
           u.lang = "ko-KR";
-          u.rate = 1;
+          u.rate = getSpeechRate();
           u.pitch = 1;
           u.onend = () => speakSequentially(idx + 1);
           synth.speak(u);
