@@ -230,7 +230,8 @@ function Result() {
 
   const announcement = page === "menu"
     ? "분석 메뉴입니다. 4번 전체 읽기, 5번 요약, 6번 질문하기."
-    : "이전 메뉴로 돌아가려면 왼쪽 방향키를 누르세요.";
+    : "";
+
 
   return (
     <AppShell title="AI 학습 노트" back={{ to: "/" }}>
