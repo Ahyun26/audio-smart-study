@@ -318,8 +318,7 @@ function Result() {
                   </p>
                 )}
                 {content && (
-                  section === "readall" ? (
-                    <div className="text-lg leading-relaxed break-words space-y-4
+                  <div className="text-lg leading-relaxed break-words space-y-4
                       [&_h1]:text-3xl [&_h1]:font-extrabold [&_h1]:mt-6 [&_h1]:mb-2
                       [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2
                       [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-2
@@ -337,13 +336,8 @@ function Result() {
                       [&_th]:border-2 [&_th]:border-border [&_th]:px-3 [&_th]:py-2 [&_th]:font-bold [&_th]:bg-muted [&_th]:text-left
                       [&_td]:border-2 [&_td]:border-border [&_td]:px-3 [&_td]:py-2
                       [&_hr]:my-4 [&_hr]:border-border">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
-                      {content}
-                    </p>
-                  )
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                  </div>
                 )}
               </>
             )}
