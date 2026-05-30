@@ -223,7 +223,7 @@ function Result() {
                 {uploadedAt && <Row label="업로드" value={uploadedAt} />}
               </dl>
               <p className="mt-4 text-base text-muted-foreground">
-                단축키: 5 전체 읽기 · 6 요약 · 7 질문하기
+                단축키: 4 전체 읽기 · 5 요약 · 6 질문하기
               </p>
             </section>
 
