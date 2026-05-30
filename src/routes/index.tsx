@@ -47,19 +47,23 @@ function Home() {
       <VoiceAnnouncer message={announcement} />
 
       <section className="flex-1 px-6 flex flex-col items-center justify-center gap-10 text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
-          AI 학습도우미<br />
-          <span className="text-muted-foreground">오늘은 무엇을 학습할까요?</span>
-        </h1>
+        <div className="space-y-2">
+          <p className="text-base sm:text-lg font-medium text-muted-foreground/70">
+            AI 학습 도우미
+          </p>
+          <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
+            오늘은 무엇을 학습할까요?
+          </h1>
+        </div>
 
         <BigButton
-          aria-label="파일 업로드. 두 번 탭하여 PDF 또는 녹음 파일을 업로드합니다."
+          aria-label="파일 업로드. 두 번 탭하여 PDF 파일을 업로드합니다."
           onClick={() => {
             speak("파일 업로드 화면으로 이동합니다.");
             navigate({ to: "/upload" });
           }}
           className="max-w-md py-12 text-3xl"
-          description="단축키 1 · PDF · 녹음 파일"
+          description="단축키 1 · PDF"
         >
           파일 업로드
         </BigButton>
