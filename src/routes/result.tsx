@@ -246,7 +246,7 @@ function Result() {
 
 
   return (
-    <AppShell title="AI 학습 노트" back={{ to: "/" }}>
+    <AppShell title={page === "menu" ? "AI 학습 메뉴" : "AI 학습 노트"} back={{ to: "/" }}>
       <VoiceAnnouncer message={announcement} />
 
       <div className={`flex-1 flex flex-col gap-6 max-w-2xl mx-auto w-full pb-10 ${page === "detail" && section === "readall" && content ? "pb-32" : ""}`}>
@@ -271,16 +271,6 @@ function Result() {
             <MenuButton shortcut="4" title="ReadAll · 전체 읽기" onClick={() => openSection("readall")} />
             <MenuButton shortcut="5" title="Summary · 요약" onClick={() => openSection("summary")} />
             <MenuButton shortcut="6" title="QA · 질문하기" onClick={() => openSection("qa")} />
-
-            <button
-              onClick={() => {
-                stopSpeaking();
-                navigate({ to: "/upload" });
-              }}
-              className="text-lg font-semibold text-muted-foreground underline underline-offset-4 py-3"
-            >
-              새 문서 분석하기
-            </button>
           </>
         ) : (
           <section className="rounded-3xl border-2 border-border bg-card p-6 space-y-4">
