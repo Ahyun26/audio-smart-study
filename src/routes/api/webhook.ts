@@ -87,7 +87,7 @@ export const Route = createFileRoute("/api/webhook")({
               Accept: "application/json, text/plain;q=0.9, */*;q=0.8",
             },
             body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(120_000),
+            signal: AbortSignal.timeout(180_000),
           });
         } catch (error) {
           return jsonResponse(
