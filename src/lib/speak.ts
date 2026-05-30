@@ -116,14 +116,51 @@ export function cleanForSpeech(input: string, mode: SpeechMode = "default"): str
 
 }
 
+let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
+
 export function speak(
   text: string,
   opts?: { interrupt?: boolean; rate?: number; raw?: boolean; mode?: SpeechMode },
 ) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
   const synth = window.speechSynthesis;
-  if (opts?.interrupt !== false) synth.cancel();
-  const spoken = opts?.raw ? text : cleanForSpeech(text, opts?.mode ?? "default");
+  if (opts?.interrupt !== false) {
+    synth.cancel();
+    if (pendingTimeout) {
+      clearTimeout(pendingTimeout);
+      pendingTimeout = null;
+    }
+  }
+  const mode = opts?.mode ?? "default";
+
+  // readall: 문단별로 끊어 읽고 2초간 쉼
+  if (!opts?.raw && mode === "readall") {
+    const paragraphs = text
+      .split(/\n{2,}/)
+      .map((p) => cleanForSpeech(p, "readall"))
+      .filter((p) => p.length > 0);
+    if (paragraphs.length === 0) return;
+    const speakNext = (i: number) => {
+      if (i >= paragraphs.length) return;
+      const u = new SpeechSynthesisUtterance(paragraphs[i]);
+      u.lang = "ko-KR";
+      u.rate = opts?.rate ?? 1;
+      u.pitch = 1;
+      u.onend = () => {
+        if (i + 1 < paragraphs.length) {
+          pendingTimeout = setTimeout(() => {
+            pendingTimeout = null;
+            speakNext(i + 1);
+          }, 2000);
+        }
+      };
+      synth.speak(u);
+    };
+    speakNext(0);
+    return;
+  }
+
+  const spoken = opts?.raw ? text : cleanForSpeech(text, mode);
   if (!spoken) return;
   const u = new SpeechSynthesisUtterance(spoken);
   u.lang = "ko-KR";
@@ -134,5 +171,10 @@ export function speak(
 
 export function stopSpeaking() {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  if (pendingTimeout) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+  }
   window.speechSynthesis.cancel();
 }
+
