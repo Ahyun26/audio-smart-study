@@ -280,16 +280,6 @@ function Result() {
                 {section === "summary" && "Summary · 요약"}
                 {section === "qa" && "QA · 질문하기"}
               </h2>
-              {section !== "readall" && (
-                <BigButton
-                  variant="secondary"
-                  onClick={goBackToMenu}
-                  aria-label="메뉴로 돌아가기"
-                  className="max-w-[12rem]"
-                >
-                  ← 메뉴
-                </BigButton>
-              )}
             </div>
 
             <p className="text-sm text-muted-foreground">
