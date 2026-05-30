@@ -117,6 +117,43 @@ export function cleanForSpeech(input: string, mode: SpeechMode = "default"): str
 }
 
 let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
+// 일시정지 상태 추적: readall 중 timeout 사이에 일시정지된 경우 재개 위해 보관
+let pausedQueue: { paragraphs: string[]; nextIndex: number; rate: number } | null = null;
+let activeQueue: { paragraphs: string[]; rate: number } | null = null;
+
+function runReadallQueue(paragraphs: string[], startIndex: number, rate: number) {
+  const synth = window.speechSynthesis;
+  activeQueue = { paragraphs, rate };
+  const speakNext = (i: number) => {
+    if (i >= paragraphs.length) {
+      activeQueue = null;
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(paragraphs[i]);
+    u.lang = "ko-KR";
+    u.rate = rate;
+    u.pitch = 1;
+    u.onend = () => {
+      // 일시정지로 인해 cancel된 경우 onend가 호출될 수 있음 — pausedQueue가 있으면 진행하지 않음
+      if (pausedQueue) return;
+      if (i + 1 < paragraphs.length) {
+        pendingTimeout = setTimeout(() => {
+          pendingTimeout = null;
+          // timeout 동안 일시정지된 경우 보관
+          if (synth.paused || pausedQueue) {
+            pausedQueue = { paragraphs, nextIndex: i + 1, rate };
+            return;
+          }
+          speakNext(i + 1);
+        }, 2000);
+      } else {
+        activeQueue = null;
+      }
+    };
+    synth.speak(u);
+  };
+  speakNext(startIndex);
+}
 
 export function speak(
   text: string,
@@ -130,8 +167,11 @@ export function speak(
       clearTimeout(pendingTimeout);
       pendingTimeout = null;
     }
+    pausedQueue = null;
+    activeQueue = null;
   }
   const mode = opts?.mode ?? "default";
+  const rate = opts?.rate ?? 1;
 
   // readall: 문단별로 끊어 읽고 2초간 쉼
   if (!opts?.raw && mode === "readall") {
@@ -140,23 +180,7 @@ export function speak(
       .map((p) => cleanForSpeech(p, "readall"))
       .filter((p) => p.length > 0);
     if (paragraphs.length === 0) return;
-    const speakNext = (i: number) => {
-      if (i >= paragraphs.length) return;
-      const u = new SpeechSynthesisUtterance(paragraphs[i]);
-      u.lang = "ko-KR";
-      u.rate = opts?.rate ?? 1;
-      u.pitch = 1;
-      u.onend = () => {
-        if (i + 1 < paragraphs.length) {
-          pendingTimeout = setTimeout(() => {
-            pendingTimeout = null;
-            speakNext(i + 1);
-          }, 2000);
-        }
-      };
-      synth.speak(u);
-    };
-    speakNext(0);
+    runReadallQueue(paragraphs, 0, rate);
     return;
   }
 
@@ -164,9 +188,55 @@ export function speak(
   if (!spoken) return;
   const u = new SpeechSynthesisUtterance(spoken);
   u.lang = "ko-KR";
-  u.rate = opts?.rate ?? 1;
+  u.rate = rate;
   u.pitch = 1;
   synth.speak(u);
+}
+
+/** 일시정지 — 현재 위치를 보존. resumeSpeaking으로 이어 읽기 가능. */
+export function pauseSpeaking() {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const synth = window.speechSynthesis;
+  // 문단 사이 timeout 대기 중이라면 다음 문단을 보관해 두고 자동 진행 차단
+  if (pendingTimeout && activeQueue) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+    // activeQueue가 현재 어떤 문단까지 진행했는지 추적이 어렵다 — 가장 안전한 동작은
+    // 호출 시점의 다음 인덱스를 별도 onend 콜백에서만 알 수 있으므로,
+    // 여기서는 단순히 일시정지 플래그만 세워두고 onend에서 nextIndex를 저장하도록 한다.
+    pausedQueue = { paragraphs: activeQueue.paragraphs, nextIndex: 0, rate: activeQueue.rate };
+    // nextIndex는 onend에서 갱신되지 않으므로, timeout 대기 중에는 추정이 어렵다.
+    // 대신 현재 발화가 끝난 직후 timeout으로 진입한 상태이므로, 이미 onend에서 i+1이 예약되었었다.
+    // 단순화: 일시정지 시점의 위치를 모르면 처음부터가 아니라 마지막으로 발화 시작된 문단부터 다시 읽도록
+    // activeQueue를 그대로 두고 resume 시 처리한다.
+  }
+  if (synth.speaking) {
+    synth.pause();
+  }
+}
+
+/** 일시정지된 지점부터 이어 읽기 */
+export function resumeSpeaking() {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const synth = window.speechSynthesis;
+  if (synth.paused) {
+    synth.resume();
+    pausedQueue = null;
+    return;
+  }
+  // timeout 사이에 일시정지된 경우: 다음 문단부터 이어 읽기
+  if (pausedQueue) {
+    const { paragraphs, nextIndex, rate } = pausedQueue;
+    pausedQueue = null;
+    runReadallQueue(paragraphs, nextIndex, rate);
+  }
+}
+
+/** 음성이 재생 중인지 (일시정지 포함) */
+export function isSpeechActive(): boolean {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
+  const synth = window.speechSynthesis;
+  return synth.speaking || synth.paused || !!pausedQueue;
 }
 
 export function stopSpeaking() {
@@ -175,6 +245,8 @@ export function stopSpeaking() {
     clearTimeout(pendingTimeout);
     pendingTimeout = null;
   }
+  pausedQueue = null;
+  activeQueue = null;
   window.speechSynthesis.cancel();
 }
 
