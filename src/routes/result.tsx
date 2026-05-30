@@ -110,7 +110,11 @@ function Result() {
     }
 
     setLoading(true);
-    speak(sec === "readall" ? "전체 내용을 불러옵니다. 잠시만 기다려 주세요." : "요약을 불러옵니다. 잠시만 기다려 주세요.");
+    speak(
+      sec === "readall"
+        ? "분석중입니다. 이전 메뉴로 돌아가려면 왼쪽 방향키를 누르세요."
+        : "분석중입니다. 이전 메뉴로 돌아가려면 왼쪽 방향키를 누르세요.",
+    );
     try {
       const text = await fetchSection({ file_base64: fileB64, mode: sec });
       if (!text.trim()) {
