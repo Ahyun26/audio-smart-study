@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
