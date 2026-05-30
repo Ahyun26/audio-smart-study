@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { speak, adjustSpeechRate, SPEECH_RATE_STEP, SPEECH_RATE_MIN, SPEECH_RATE_MAX, getSpeechRate } from "@/lib/speak";
+import { speak, changeSpeechRateAndResume, isRateLocked, SPEECH_RATE_STEP } from "@/lib/speak";
 import { SpeedBadge } from "@/components/SpeedBadge";
 
 interface AppShellProps {
