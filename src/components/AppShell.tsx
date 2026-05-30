@@ -13,16 +13,13 @@ export function AppShell({ title, children, back }: AppShellProps) {
   const router = useRouter();
 
   const goBack = () => {
+    if (typeof window !== "undefined") window.speechSynthesis.cancel();
     if (back?.onBack) {
       back.onBack();
       return;
     }
     speak("이전 화면으로 이동합니다.");
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.history.back();
-    } else {
-      router.navigate({ to: back?.to ?? "/" });
-    }
+    router.navigate({ to: back?.to ?? "/" });
   };
 
   useEffect(() => {
