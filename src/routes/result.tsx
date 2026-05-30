@@ -204,8 +204,9 @@ function Result() {
         if (page === "menu") {
           e.preventDefault();
           e.stopPropagation();
+          if (typeof window !== "undefined") window.speechSynthesis.cancel();
           stopSpeaking();
-          navigate({ to: "/" });
+          navigate({ to: "/upload" });
           return;
         }
       }
@@ -258,7 +259,7 @@ function Result() {
 
 
   return (
-    <AppShell title={page === "menu" ? "AI 학습 메뉴" : "AI 학습 노트"} back={page === "detail" ? { onBack: goBackToMenu, label: "메뉴로 돌아가기" } : { to: "/" }}>
+    <AppShell title={page === "menu" ? "AI 학습 메뉴" : "AI 학습 노트"} back={page === "detail" ? { onBack: goBackToMenu, label: "메뉴로 돌아가기" } : { to: "/upload", label: "업로드 화면으로" }}>
       <VoiceAnnouncer message={announcement} />
 
       <div className={`flex-1 flex flex-col gap-6 max-w-2xl mx-auto w-full pb-10 ${page === "detail" && (section === "readall" || section === "summary") && content ? "pb-32" : ""}`}>
