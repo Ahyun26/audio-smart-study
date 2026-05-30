@@ -110,7 +110,11 @@ function Result() {
     }
 
     setLoading(true);
-    speak(sec === "readall" ? "전체 내용을 불러옵니다. 잠시만 기다려 주세요." : "요약을 불러옵니다. 잠시만 기다려 주세요.");
+    speak(
+      sec === "readall"
+        ? "분석중입니다. 이전 메뉴로 돌아가려면 왼쪽 방향키를 누르세요."
+        : "분석중입니다. 이전 메뉴로 돌아가려면 왼쪽 방향키를 누르세요.",
+    );
     try {
       const text = await fetchSection({ file_base64: fileB64, mode: sec });
       if (!text.trim()) {
@@ -176,13 +180,13 @@ function Result() {
       }
 
       if (page === "menu") {
-        if (e.key === "5") {
+        if (e.key === "4") {
           e.preventDefault();
           openSection("readall");
-        } else if (e.key === "6") {
+        } else if (e.key === "5") {
           e.preventDefault();
           openSection("summary");
-        } else if (e.key === "7") {
+        } else if (e.key === "6") {
           e.preventDefault();
           openSection("qa");
         }
@@ -197,7 +201,7 @@ function Result() {
     : null;
 
   const announcement = page === "menu"
-    ? "분석 메뉴입니다. 5번 전체 읽기, 6번 요약, 7번 질문하기."
+    ? "분석 메뉴입니다. 4번 전체 읽기, 5번 요약, 6번 질문하기."
     : "이전 메뉴로 돌아가려면 왼쪽 방향키를 누르세요.";
 
   return (
@@ -219,13 +223,13 @@ function Result() {
                 {uploadedAt && <Row label="업로드" value={uploadedAt} />}
               </dl>
               <p className="mt-4 text-base text-muted-foreground">
-                단축키: 5 전체 읽기 · 6 요약 · 7 질문하기
+                단축키: 4 전체 읽기 · 5 요약 · 6 질문하기
               </p>
             </section>
 
-            <MenuButton shortcut="5" title="ReadAll · 전체 읽기" onClick={() => openSection("readall")} />
-            <MenuButton shortcut="6" title="Summary · 요약" onClick={() => openSection("summary")} />
-            <MenuButton shortcut="7" title="QA · 질문하기" onClick={() => openSection("qa")} />
+            <MenuButton shortcut="4" title="ReadAll · 전체 읽기" onClick={() => openSection("readall")} />
+            <MenuButton shortcut="5" title="Summary · 요약" onClick={() => openSection("summary")} />
+            <MenuButton shortcut="6" title="QA · 질문하기" onClick={() => openSection("qa")} />
 
             <button
               onClick={() => {
