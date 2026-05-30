@@ -180,13 +180,13 @@ function Result() {
       }
 
       if (page === "menu") {
-        if (e.key === "5") {
+        if (e.key === "4") {
           e.preventDefault();
           openSection("readall");
-        } else if (e.key === "6") {
+        } else if (e.key === "5") {
           e.preventDefault();
           openSection("summary");
-        } else if (e.key === "7") {
+        } else if (e.key === "6") {
           e.preventDefault();
           openSection("qa");
         }
