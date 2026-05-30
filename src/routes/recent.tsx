@@ -50,19 +50,10 @@ function Recent() {
       <VoiceAnnouncer message={announcement} />
 
       {docs.length === 0 ? (
-        <div className="max-w-xl mx-auto w-full mt-8 text-center space-y-6">
+        <div className="max-w-xl mx-auto w-full mt-8 text-center">
           <p className="text-xl font-medium text-muted-foreground">
-            아직 분석한 문서가 없습니다.
+            최근 학습한 문서가 없습니다.
           </p>
-          <BigButton
-            onClick={() => {
-              speak("파일 업로드 화면으로 이동합니다.");
-              navigate({ to: "/upload" });
-            }}
-            className="max-w-md mx-auto"
-          >
-            파일 업로드하기
-          </BigButton>
         </div>
       ) : (
         <ul className="flex flex-col gap-4 max-w-xl mx-auto w-full mt-4" role="list">
