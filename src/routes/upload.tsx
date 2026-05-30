@@ -5,6 +5,7 @@ import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak } from "@/lib/speak";
 import { fileToBase64 } from "@/lib/webhook";
+import { saveRecentDoc } from "@/lib/recentDocs";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -89,6 +90,13 @@ function Upload() {
       sessionStorage.setItem("analysis_file_base64", file_base64);
       // 결과 화면은 메뉴에서 선택할 때 그때그때 불러온다.
       sessionStorage.removeItem("analysis_result");
+      // 최근 문서 목록에 저장
+      saveRecentDoc({
+        pdfName: pdf.name,
+        uploadedAt: new Date().toISOString(),
+        sizeBytes: pdf.size,
+        fileBase64: file_base64,
+      });
       navigate({ to: "/result" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
