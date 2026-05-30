@@ -155,25 +155,32 @@ export const SPEECH_RATE_STEP = RATE_STEP;
 export const SPEECH_RATE_MIN = RATE_MIN;
 export const SPEECH_RATE_MAX = RATE_MAX;
 
+let activeIndex = 0;
+let rateLocked = false;
+
+export function isRateLocked(): boolean {
+  return rateLocked;
+}
+
 function runReadallQueue(paragraphs: string[], startIndex: number, rate: number) {
   const synth = window.speechSynthesis;
   activeQueue = { paragraphs, rate };
+  activeIndex = startIndex;
   const speakNext = (i: number) => {
     if (i >= paragraphs.length) {
       activeQueue = null;
       return;
     }
+    activeIndex = i;
     const u = new SpeechSynthesisUtterance(paragraphs[i]);
     u.lang = "ko-KR";
     u.rate = rate;
     u.pitch = 1;
     u.onend = () => {
-      // 일시정지로 인해 cancel된 경우 onend가 호출될 수 있음 — pausedQueue가 있으면 진행하지 않음
       if (pausedQueue) return;
       if (i + 1 < paragraphs.length) {
         pendingTimeout = setTimeout(() => {
           pendingTimeout = null;
-          // timeout 동안 일시정지된 경우 보관
           if (synth.paused || pausedQueue) {
             pausedQueue = { paragraphs, nextIndex: i + 1, rate };
             return;
@@ -187,6 +194,62 @@ function runReadallQueue(paragraphs: string[], startIndex: number, rate: number)
     synth.speak(u);
   };
   speakNext(startIndex);
+}
+
+/**
+ * 배속을 변경하면서 현재 읽고 있던 readall 큐가 있다면
+ * 안내 음성 후 그 위치부터 새 배속으로 이어 읽기 시작.
+ * 안내 음성 재생 중에는 lock이 걸려 추가 호출을 무시함.
+ */
+export function changeSpeechRateAndResume(delta: number): number {
+  if (rateLocked) return _rate;
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    return adjustSpeechRate(delta);
+  }
+  const synth = window.speechSynthesis;
+  const prev = _rate;
+  const target = Math.min(RATE_MAX, Math.max(RATE_MIN, Math.round((_rate + delta) * 10) / 10));
+  const atLimit = target === prev;
+
+  // 현재 readall 큐 스냅샷
+  let snapshot: { paragraphs: string[]; index: number } | null = null;
+  if (activeQueue) {
+    snapshot = { paragraphs: activeQueue.paragraphs, index: activeIndex };
+  } else if (pausedQueue) {
+    snapshot = { paragraphs: pausedQueue.paragraphs, index: pausedQueue.nextIndex };
+  }
+
+  // 현재 음성/타임아웃 중지
+  if (pendingTimeout) {
+    clearTimeout(pendingTimeout);
+    pendingTimeout = null;
+  }
+  pausedQueue = null;
+  activeQueue = null;
+  synth.cancel();
+
+  const newRate = setSpeechRate(target);
+
+  const message = atLimit
+    ? `최${delta > 0 ? "대" : "소"} ${newRate.toFixed(1)}배속입니다.`
+    : `${newRate.toFixed(1)}배속으로 변경되었습니다.`;
+
+  rateLocked = true;
+  const u = new SpeechSynthesisUtterance(message);
+  u.lang = "ko-KR";
+  u.rate = newRate;
+  u.pitch = 1;
+  u.onend = () => {
+    rateLocked = false;
+    if (snapshot && snapshot.index < snapshot.paragraphs.length) {
+      runReadallQueue(snapshot.paragraphs, snapshot.index, newRate);
+    }
+  };
+  u.onerror = () => {
+    rateLocked = false;
+  };
+  synth.speak(u);
+  return newRate;
 }
 
 export function speak(

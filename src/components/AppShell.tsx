@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { speak, adjustSpeechRate, SPEECH_RATE_STEP, SPEECH_RATE_MIN, SPEECH_RATE_MAX, getSpeechRate } from "@/lib/speak";
+import { speak, changeSpeechRateAndResume, isRateLocked, SPEECH_RATE_STEP } from "@/lib/speak";
 import { SpeedBadge } from "@/components/SpeedBadge";
 
 interface AppShellProps {
@@ -30,15 +30,9 @@ export function AppShell({ title, children, back }: AppShellProps) {
       if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         if (isInput) return;
         e.preventDefault();
-        const current = getSpeechRate();
+        if (isRateLocked()) return;
         const delta = e.key === "ArrowUp" ? SPEECH_RATE_STEP : -SPEECH_RATE_STEP;
-        const next = adjustSpeechRate(delta);
-        if (next === current) {
-          const limit = e.key === "ArrowUp" ? SPEECH_RATE_MAX : SPEECH_RATE_MIN;
-          speak(`최${e.key === "ArrowUp" ? "대" : "소"} ${limit.toFixed(1)}배속입니다.`, { interrupt: true, rate: next });
-        } else {
-          speak(`${next.toFixed(1)}배속으로 변경되었습니다.`, { interrupt: true, rate: next });
-        }
+        changeSpeechRateAndResume(delta);
         return;
       }
 
