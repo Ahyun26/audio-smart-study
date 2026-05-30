@@ -128,8 +128,8 @@ function Result() {
         setPlayState("playing");
         const synth = window.speechSynthesis;
         const messages = [
-          "7번을 누르면 일시정지 또는 이어듣기입니다.",
-          "8번을 누르면 처음부터 다시 들을 수 있습니다.",
+          "칠 번을 누르면 일시정지 또는 이어듣기입니다.",
+          "팔 번을 누르면 처음부터 다시 들을 수 있습니다.",
           "왼쪽 방향키를 누르면 메뉴로 돌아갑니다.",
         ];
         const speakSequentially = (idx: number) => {
