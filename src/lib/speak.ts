@@ -121,6 +121,40 @@ let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
 let pausedQueue: { paragraphs: string[]; nextIndex: number; rate: number } | null = null;
 let activeQueue: { paragraphs: string[]; rate: number } | null = null;
 
+// ===== 전역 음성 배속 =====
+const RATE_KEY = "speech_rate";
+const RATE_MIN = 0.5;
+const RATE_MAX = 2.0;
+const RATE_STEP = 0.5;
+let _rate = 1;
+if (typeof window !== "undefined") {
+  const saved = parseFloat(window.localStorage?.getItem(RATE_KEY) ?? "");
+  if (!Number.isNaN(saved) && saved >= RATE_MIN && saved <= RATE_MAX) _rate = saved;
+}
+const rateListeners = new Set<(r: number) => void>();
+export function getSpeechRate(): number {
+  return _rate;
+}
+export function setSpeechRate(r: number): number {
+  const clamped = Math.min(RATE_MAX, Math.max(RATE_MIN, Math.round(r * 10) / 10));
+  _rate = clamped;
+  if (typeof window !== "undefined") {
+    try { window.localStorage.setItem(RATE_KEY, String(clamped)); } catch { /* ignore */ }
+  }
+  rateListeners.forEach((cb) => cb(clamped));
+  return clamped;
+}
+export function adjustSpeechRate(delta: number): number {
+  return setSpeechRate(_rate + delta);
+}
+export function subscribeSpeechRate(cb: (r: number) => void): () => void {
+  rateListeners.add(cb);
+  return () => rateListeners.delete(cb);
+}
+export const SPEECH_RATE_STEP = RATE_STEP;
+export const SPEECH_RATE_MIN = RATE_MIN;
+export const SPEECH_RATE_MAX = RATE_MAX;
+
 function runReadallQueue(paragraphs: string[], startIndex: number, rate: number) {
   const synth = window.speechSynthesis;
   activeQueue = { paragraphs, rate };
