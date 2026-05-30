@@ -89,7 +89,6 @@ function Upload() {
       sessionStorage.setItem("analysis_file_base64", file_base64);
       // 결과 화면은 메뉴에서 선택할 때 그때그때 불러온다.
       sessionStorage.removeItem("analysis_result");
-      speak("분석 메뉴 화면으로 이동합니다.");
       navigate({ to: "/result" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
