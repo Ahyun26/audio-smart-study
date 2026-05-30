@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
-import { speak, stopSpeaking } from "@/lib/speak";
+import { speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/lib/speak";
 import { expandImagesForSpeech, hasImageMarkdown } from "@/lib/imageDescribe";
 import { askQuestion, fetchSection } from "@/lib/webhook";
 
