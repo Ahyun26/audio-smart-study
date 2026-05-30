@@ -4,7 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
 import { speak } from "@/lib/speak";
-import { sendAnalysis } from "@/lib/webhook";
+import { fileToBase64 } from "@/lib/webhook";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
