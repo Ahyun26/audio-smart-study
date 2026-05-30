@@ -191,11 +191,21 @@ function Result() {
       const t = e.target as HTMLElement | null;
       const isInput = t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT");
 
-      if (e.key === "ArrowLeft" && page === "detail") {
+      if (e.key === "ArrowLeft") {
         if (isInput) return;
-        e.preventDefault();
-        goBackToMenu();
-        return;
+        if (page === "detail") {
+          e.preventDefault();
+          e.stopPropagation();
+          goBackToMenu();
+          return;
+        }
+        if (page === "menu") {
+          e.preventDefault();
+          e.stopPropagation();
+          stopSpeaking();
+          navigate({ to: "/" });
+          return;
+        }
       }
 
       if (isInput) {
