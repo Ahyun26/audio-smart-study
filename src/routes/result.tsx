@@ -278,14 +278,16 @@ function Result() {
                 {section === "summary" && "Summary · 요약"}
                 {section === "qa" && "QA · 질문하기"}
               </h2>
-              <BigButton
-                variant="secondary"
-                onClick={goBackToMenu}
-                aria-label="메뉴로 돌아가기"
-                className="max-w-[12rem]"
-              >
-                ← 메뉴
-              </BigButton>
+              {section !== "readall" && (
+                <BigButton
+                  variant="secondary"
+                  onClick={goBackToMenu}
+                  aria-label="메뉴로 돌아가기"
+                  className="max-w-[12rem]"
+                >
+                  ← 메뉴
+                </BigButton>
+              )}
             </div>
 
             <p className="text-sm text-muted-foreground">
@@ -306,38 +308,40 @@ function Result() {
                 )}
                 {content && (
                   <>
-                    <div className="flex gap-3 flex-wrap justify-center items-center">
-                      <BigButton
-                        variant={playState === "playing" ? "secondary" : "primary"}
-                        onClick={() => {
-                          if (playState === "playing") {
-                            pauseSpeaking();
-                            setPlayState("paused");
-                          } else if (playState === "paused") {
-                            resumeSpeaking();
-                            setPlayState("playing");
-                          } else if (section === "readall" || section === "summary") {
-                            playText(content, section);
-                          }
-                        }}
-                        className="max-w-[12rem]"
-                      >
-                        {playState === "playing" ? "일시정지 (7)" : playState === "paused" ? "이어 듣기 (7)" : "다시 듣기 (7)"}
-                      </BigButton>
-                      {playState !== "idle" && (
+                    {section !== "readall" && (
+                      <div className="flex gap-3 flex-wrap justify-center items-center">
                         <BigButton
-                          variant="secondary"
+                          variant={playState === "playing" ? "secondary" : "primary"}
                           onClick={() => {
-                            if (section === "readall" || section === "summary") {
+                            if (playState === "playing") {
+                              pauseSpeaking();
+                              setPlayState("paused");
+                            } else if (playState === "paused") {
+                              resumeSpeaking();
+                              setPlayState("playing");
+                            } else if (section === "summary") {
                               playText(content, section);
                             }
                           }}
                           className="max-w-[12rem]"
                         >
-                          처음부터 (8)
+                          {playState === "playing" ? "일시정지 (7)" : playState === "paused" ? "이어 듣기 (7)" : "다시 듣기 (7)"}
                         </BigButton>
-                      )}
-                    </div>
+                        {playState !== "idle" && (
+                          <BigButton
+                            variant="secondary"
+                            onClick={() => {
+                              if (section === "summary") {
+                                playText(content, section);
+                              }
+                            }}
+                            className="max-w-[12rem]"
+                          >
+                            처음부터 (8)
+                          </BigButton>
+                        )}
+                      </div>
+                    )}
                     <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
                       {content}
                     </p>
