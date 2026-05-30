@@ -227,9 +227,9 @@ function Result() {
               </p>
             </section>
 
-            <MenuButton shortcut="5" title="ReadAll · 전체 읽기" onClick={() => openSection("readall")} />
-            <MenuButton shortcut="6" title="Summary · 요약" onClick={() => openSection("summary")} />
-            <MenuButton shortcut="7" title="QA · 질문하기" onClick={() => openSection("qa")} />
+            <MenuButton shortcut="4" title="ReadAll · 전체 읽기" onClick={() => openSection("readall")} />
+            <MenuButton shortcut="5" title="Summary · 요약" onClick={() => openSection("summary")} />
+            <MenuButton shortcut="6" title="QA · 질문하기" onClick={() => openSection("qa")} />
 
             <button
               onClick={() => {
