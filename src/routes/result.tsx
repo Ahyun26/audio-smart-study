@@ -391,6 +391,52 @@ function Result() {
           </section>
         )}
       </div>
+
+      {page === "detail" && section === "readall" && content && (
+        <nav
+          aria-label="재생 컨트롤"
+          className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
+        >
+          <div className="max-w-2xl mx-auto grid grid-cols-3 gap-2 px-4 py-3">
+            <button
+              onClick={goBackToMenu}
+              aria-label="메뉴로 돌아가기 (왼쪽 방향키)"
+              className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-border bg-background py-3 hover:border-primary transition-colors"
+            >
+              <span className="text-2xl" aria-hidden>←</span>
+              <span className="text-sm font-semibold">메뉴 (←)</span>
+            </button>
+            <button
+              onClick={() => {
+                if (playState === "playing") {
+                  pauseSpeaking();
+                  setPlayState("paused");
+                } else if (playState === "paused") {
+                  resumeSpeaking();
+                  setPlayState("playing");
+                } else {
+                  playText(content, "readall");
+                }
+              }}
+              aria-label={playState === "playing" ? "일시정지 (단축키 7)" : "이어듣기 (단축키 7)"}
+              className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-border bg-background py-3 hover:border-primary transition-colors"
+            >
+              <span className="text-2xl" aria-hidden>{playState === "playing" ? "⏸" : "▶"}</span>
+              <span className="text-sm font-semibold">
+                {playState === "playing" ? "일시정지 (7)" : "이어듣기 (7)"}
+              </span>
+            </button>
+            <button
+              onClick={() => playText(content, "readall")}
+              aria-label="처음부터 (단축키 8)"
+              className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-border bg-background py-3 hover:border-primary transition-colors"
+            >
+              <span className="text-2xl" aria-hidden>⏮</span>
+              <span className="text-sm font-semibold">처음부터 (8)</span>
+            </button>
+          </div>
+        </nav>
+      )}
     </AppShell>
   );
 }
