@@ -190,6 +190,22 @@ function Result() {
           e.preventDefault();
           openSection("qa");
         }
+      } else if (page === "detail" && (section === "readall" || section === "summary") && content) {
+        if (e.key === "7") {
+          e.preventDefault();
+          if (playState === "playing") {
+            pauseSpeaking();
+            setPlayState("paused");
+          } else if (playState === "paused") {
+            resumeSpeaking();
+            setPlayState("playing");
+          } else {
+            playText(content, section);
+          }
+        } else if (e.key === "8") {
+          e.preventDefault();
+          playText(content, section);
+        }
       }
     };
     window.addEventListener("keydown", onKey);
