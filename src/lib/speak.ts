@@ -205,7 +205,7 @@ export function speak(
     activeQueue = null;
   }
   const mode = opts?.mode ?? "default";
-  const rate = opts?.rate ?? 1;
+  const rate = opts?.rate ?? _rate;
 
   // readall: 문단별로 끊어 읽고 2초간 쉼
   if (!opts?.raw && mode === "readall") {
