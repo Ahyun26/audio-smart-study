@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BigButton } from "@/components/BigButton";
 import { VoiceAnnouncer } from "@/components/VoiceAnnouncer";
-import { speak, stopSpeaking } from "@/lib/speak";
+import { speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/lib/speak";
 import { expandImagesForSpeech, hasImageMarkdown } from "@/lib/imageDescribe";
 import { askQuestion, fetchSection } from "@/lib/webhook";
 
@@ -45,7 +45,7 @@ function Result() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const [playState, setPlayState] = useState<"idle" | "playing" | "paused">("idle");
 
   const [question, setQuestion] = useState("");
   const [qaAnswer, setQaAnswer] = useState("");
@@ -61,7 +61,7 @@ function Result() {
 
   const playText = async (text: string, mode: "readall" | "summary") => {
     stopSpeaking();
-    setPlaying(true);
+    setPlayState("playing");
     if (hasImageMarkdown(text)) {
       try {
         const expanded = await expandImagesForSpeech(text);
@@ -82,7 +82,7 @@ function Result() {
     setContent("");
     setError(null);
     setLoading(false);
-    setPlaying(false);
+    setPlayState("idle");
     setQuestion("");
     setQaAnswer("");
     setQaError(null);
@@ -147,7 +147,7 @@ function Result() {
       const answer = await askQuestion({ file_base64: fileB64, question: q });
       setQaAnswer(answer);
       stopSpeaking();
-      setPlaying(true);
+      setPlayState("playing");
       speak(answer, { interrupt: true, mode: "summary" });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "알 수 없는 오류";
@@ -273,21 +273,36 @@ function Result() {
                 )}
                 {content && (
                   <>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <BigButton
-                        variant={playing ? "secondary" : "primary"}
+                        variant={playState === "playing" ? "secondary" : "primary"}
                         onClick={() => {
-                          if (playing) {
-                            stopSpeaking();
-                            setPlaying(false);
+                          if (playState === "playing") {
+                            pauseSpeaking();
+                            setPlayState("paused");
+                          } else if (playState === "paused") {
+                            resumeSpeaking();
+                            setPlayState("playing");
                           } else if (section === "readall" || section === "summary") {
                             playText(content, section);
                           }
                         }}
                         className="max-w-[10rem]"
                       >
-                        {playing ? "중지" : "다시 듣기"}
+                        {playState === "playing" ? "일시정지" : playState === "paused" ? "이어 듣기" : "다시 듣기"}
                       </BigButton>
+                      {playState !== "idle" && (
+                        <BigButton
+                          variant="secondary"
+                          onClick={() => {
+                            stopSpeaking();
+                            setPlayState("idle");
+                          }}
+                          className="max-w-[10rem]"
+                        >
+                          처음부터
+                        </BigButton>
+                      )}
                     </div>
                     <p className="text-lg leading-relaxed whitespace-pre-wrap break-words">
                       {content}
