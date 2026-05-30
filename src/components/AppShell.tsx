@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { speak, adjustSpeechRate, SPEECH_RATE_STEP, SPEECH_RATE_MIN, SPEECH_RATE_MAX, getSpeechRate } from "@/lib/speak";
 import { SpeedBadge } from "@/components/SpeedBadge";
@@ -6,11 +6,20 @@ import { SpeedBadge } from "@/components/SpeedBadge";
 interface AppShellProps {
   title: string;
   children: ReactNode;
-  back?: { to: string; label?: string };
+  back?: { to?: string; label?: string };
 }
 
 export function AppShell({ title, children, back }: AppShellProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
+
+  const goBack = () => {
+    speak("이전 화면으로 이동합니다.");
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.history.back();
+    } else {
+      router.navigate({ to: back?.to ?? "/" });
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -36,24 +45,25 @@ export function AppShell({ title, children, back }: AppShellProps) {
       if (e.key !== "ArrowLeft") return;
       if (isInput) return;
       e.preventDefault();
-      speak("이전 화면으로 이동합니다.");
-      navigate({ to: back.to });
+      goBack();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [back, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [back]);
 
   return (
     <main className="min-h-dvh bg-background text-foreground flex flex-col">
       <header className="px-6 pt-8 pb-4 flex items-center gap-4">
         {back ? (
-          <Link
-            to={back.to}
+          <button
+            type="button"
+            onClick={goBack}
             aria-label={back.label ?? "뒤로 가기 (왼쪽 방향키)"}
             className="min-h-14 min-w-14 inline-flex items-center justify-center rounded-2xl border-2 border-border text-xl font-bold hover:bg-accent"
           >
             ←
-          </Link>
+          </button>
         ) : (
           <div className="w-14" aria-hidden />
         )}
