@@ -352,6 +352,12 @@ function Result() {
                   ref={qaInputRef}
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      submitQuestion();
+                    }
+                  }}
                   rows={3}
                   placeholder="문서에 대해 궁금한 점을 입력하세요"
                   disabled={qaLoading || !fileB64}
