@@ -352,7 +352,7 @@ function Result() {
         )}
       </div>
 
-      {page === "detail" && section === "readall" && content && (
+      {page === "detail" && (section === "readall" || section === "summary") && content && (
         <nav
           aria-label="재생 컨트롤"
           className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80"
@@ -375,7 +375,7 @@ function Result() {
                   resumeSpeaking();
                   setPlayState("playing");
                 } else {
-                  playText(content, "readall");
+                  playText(content, section);
                 }
               }}
               aria-label={playState === "playing" ? "일시정지 (단축키 7)" : "이어듣기 (단축키 7)"}
@@ -387,7 +387,7 @@ function Result() {
               </span>
             </button>
             <button
-              onClick={() => playText(content, "readall")}
+              onClick={() => playText(content, section)}
               aria-label="처음부터 (단축키 8)"
               className="flex flex-col items-center justify-center gap-1 rounded-2xl border-2 border-border bg-background py-3 hover:border-primary transition-colors"
             >
