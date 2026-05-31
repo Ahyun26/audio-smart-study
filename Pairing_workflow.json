@@ -1,0 +1,293 @@
+{
+  "name": "Pairing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "/docvoice/upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ad9fb0eb-2c44-46cb-bd25-697d25b03331",
+      "name": "Webhook",
+      "webhookId": "46138cb1-cbc7-4b12-a4fb-3849b9659806"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.upstage.ai/v1/solar/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.solarBody }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "f66b16fc-d4aa-405b-8719-56d9cb37bc2d",
+      "name": "Solar LLM",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vfpP4qs0Zgy6sWoW",
+          "name": "Upstage API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1584,
+        0
+      ],
+      "id": "e1645328-5cce-4052-b5c8-6b812dc02eec",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.upstage.ai/v1/document-digitization",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "document",
+              "inputDataFieldName": "document"
+            },
+            {
+              "name": "model",
+              "value": "document-parse"
+            },
+            {
+              "name": "output_formats",
+              "value": "[\"markdown\"]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        0
+      ],
+      "id": "18e3ac78-48c9-4779-8ad3-6bc380cceca2",
+      "name": "Document Parse",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vfpP4qs0Zgy6sWoW",
+          "name": "Upstage API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "file_base64",
+        "binaryPropertyName": "document",
+        "options": {
+          "fileName": "document.pdf"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "04ffb48c-d4ea-43c5-abdd-054ca9f76793",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "364fc626-68de-4dbf-b321-0f77b50e8774",
+              "name": "file_base64",
+              "value": "={{ $json.body.file_base64 }} ",
+              "type": "string"
+            },
+            {
+              "id": "02da6051-f816-487e-a7c8-45fd85131a0c",
+              "name": "mode",
+              "value": "={{ $json.body.mode }}",
+              "type": "string"
+            },
+            {
+              "id": "f8a98563-e691-4438-8ab0-bb5b03fd9f9d",
+              "name": "user_question",
+              "value": "={{ $json.body.user_question }}",
+              "type": "string"
+            },
+            {
+              "id": "f2ad3e40-fa56-44e3-848b-4cfbbf293515",
+              "name": "history",
+              "value": "={{ $json.body.history }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "754548c4-1854-48ef-88d1-f82097b9a1f2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const mode = $('Prompt Builder').first().json.mode; \nconst solarContent = $('Solar LLM').first().json.choices[0].message.content;\nconst tableCount = $('Prompt Builder').first().json.tableCount;\nconst imageCount = $('Prompt Builder').first().json.imageCount;\n\nconst cleanResult = solarContent.replace(/```/g, \"\").trim();\n\nreturn {\n  success: true,\n  summary_text: cleanResult,\n  table_count: tableCount,\n  image_count: imageCount,\n  mode: mode\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        0
+      ],
+      "id": "e311eb5c-19e0-484c-8fd2-f9103f5fe2ed",
+      "name": "Response Builder"
+    },
+    {
+      "parameters": {
+        "jsCode": "const markdown = $('Document Parse').first().json.content.markdown;\nconst elements = $('Document Parse').first().json.elements || [];\nconst mode = $('Webhook').first().json.body.mode || 'summary';\nconst question = $('Webhook').first().json.body.user_question || '';\n\nconst tableCount = elements.filter(e => e.category === 'table').length;\nconst imageCount = elements.filter(e => e.category === 'figure').length;\n\nlet prompt = null;\nlet directText = null;\n\nif (mode === 'summary') {\n  prompt = `아래 문서를 단계별로 정밀 분석하여 시각장애 학생을 위한 '친절한 학습 노트'를 작성해주세요.\n\n### 분석 지침\n1단계 [주제 파악]: 문서의 종류(강의자료, 논문 등)와 핵심 제목을 도출하세요.\n2단계 [내용 추출]: 핵심 개념과 중요 키워드를 3개 이상 뽑으세요.\n3단계 [정보 확인]: 시험 일정이나 과제 기한이 언급되었다면 놓치지 말고 기록하세요.\n4단계 [데이터 해석]: 표가 있다면 행/열을 나열하지 말고, \"이 표는 ~을 보여줍니다\"로 시작하여 의미를 해석하세요.\n\n### 작성 규칙 (중요!)\n- 모든 내용은 자연스러운 구어체(~해요, ~입니다)로 작성하세요.\n- JSON 형식이 아닌, 아래 구조의 일반 텍스트로만 출력하세요.\n\n### 출력 양식\n[제목]: (AI가 생성한 직관적인 제목)\n[주제]: (문서의 주요 과목이나 분야)\n\n[핵심 요약]:\n(전체 내용을 2~3문장으로 친절하게 설명해주세요.)\n\n[중요 포인트]:\n- 키워드: (핵심 키워드 나열)\n- 주요 개념: (가장 중요한 문장 하나)\n\n[알림 사항]:\n- 일정/기한: (시험이나 과제 날짜, 없으면 '확인된 일정 없음')\n- 표 설명: (문서 내 표가 있다면 그 의미를 설명, 없으면 생략)\n\n### 문서\n${markdown.substring(0, 800)}`;\n\n} else if (mode === 'read_all') {\n  prompt = `아래 문서를 처음부터 끝까지 전달해주세요.\n\n### 규칙\n- 본문 내용을 순서대로 빠짐없이 전달하세요.\n- 표가 나오면 행/열 나열 대신 \"이 표는 ~을 보여줍니다\"로 의미를 설명하세요.\n- 마크다운 기호(|, #, * 등)는 제거하세요.\n- 자연스러운 구어체로 작성하세요.\n\n### 문서\n${markdown.substring(0, 2000)}`;\n\n} else if (mode === 'qa') {\n  prompt = `아래 문서를 바탕으로 질문에 답하세요.\n\n### 답변 규칙\n- 구어체로 2~3문장으로 답하세요.\n- 문서에 없는 내용은 답하지 마세요.\n- 표가 관련된 질문이면 의미 중심으로 설명하세요.\n\n\n### 문서\n${markdown.substring(0, 1000)}\n\n### 질문\n${question}`;\n}\n\nconst solarBody = JSON.stringify({\n  model: \"solar-pro3-260323\",\n  messages: [\n    {\n      role: \"system\",\n      content: `당신은 시각장애 대학생의 학습을 돕는 문서 분석 전문가입니다.\n표를 설명할 때는 절대 행과 열을 나열하지 마세요.\n반드시 \"이 표는 ~을 보여줍니다\"로 시작해서 의미를 먼저 설명하세요.\n모든 답변은 자연스러운 구어체로 작성하세요.`\n    },\n    {\n      role: \"user\",\n      content: prompt || ''\n    }\n  ],\n  max_tokens: 400,\n  temperature: 0.3\n});\n\nreturn { prompt, directText, tableCount, imageCount, solarBody, mode };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        0
+      ],
+      "id": "6531c6e1-5420-498c-94be-9c5abb6fe268",
+      "name": "Prompt Builder"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solar LLM": {
+      "main": [
+        [
+          {
+            "node": "Response Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Parse": {
+      "main": [
+        [
+          {
+            "node": "Prompt Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Document Parse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Builder": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Builder": {
+      "main": [
+        [
+          {
+            "node": "Solar LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "53715de3-34ac-464e-a43b-37715627d723",
+  "meta": {
+    "instanceId": "2aa25c055e481063d60ff384cc897ed35cdd979074e2a9ec57a31dac845e96c8"
+  },
+  "id": "9Bi5RkU8TWqd8B8z",
+  "tags": []
+}
