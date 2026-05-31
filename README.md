@@ -1,8 +1,8 @@
 # Pairing 🔊
 
-![Pairing](Pairing.png)
+<img src="Pairing.png" width="600">
 
-> 시각장애 대학생을 위한 음성 기반 문서 AI 서비스
+> 시각장애 대학생을 위한 음성 기반 문서 AI 서비스<br>
 > 2026 Low-code AI Startup Hackathon with Upstage 우수상 🏆
 
 ## 서비스 소개
