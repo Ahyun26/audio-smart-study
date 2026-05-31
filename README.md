@@ -1,4 +1,7 @@
 # Pairing 🔊
+
+![Pairing](Pairing.png)
+
 > 시각장애 대학생을 위한 음성 기반 문서 AI 서비스
 > 2026 Low-code AI Startup Hackathon with Upstage 우수상 🏆
 
