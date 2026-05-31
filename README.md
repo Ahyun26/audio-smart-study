@@ -34,8 +34,8 @@ Webhook → Edit Fields → Convert to File
 
 ## 서비스 링크
 - Lovable 배포 URL: https://audio-smart-study.lovable.app
-- n8n 워크플로우: workflow.json 참고
+- n8n 워크플로우: Pairing_workflow.json 참고
 
-## 팀 구성
+## Contributors
 - n8n 워크플로우: 정아현
 - Lovable(프론트엔드): 김아현
